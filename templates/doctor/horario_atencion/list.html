@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+{% block title %}Lista de Horarios de Atención - SaludTotal{% endblock %}
+{% block content %}
+{% load static %}
+
+<div class="min-h-screen bg-gray-50 white:bg-gray-900">
+    <div class="w-full px-6 py-8">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-lg shadow-lg mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold">Gestión de Horarios de Atención</h1>
+                    <p class="text-green-100 mt-1">
+                        Administra los horarios de atención médica del sistema
+                    </p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold">{{ horarios_activos|default:0 }}</div>
+                    <div class="text-sm text-green-100">Total Horarios</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de búsqueda y acciones -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <!-- Búsqueda -->
+                <div class="flex-1 max-w-md">
+                    <form method="GET" class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input
+                            type="text"
+                            name="q"
+                            value="{{ request.GET.q }}"
+                            placeholder="Buscar por día de la semana..."
+                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                        />
+                    </form>
+                </div>
+
+                <!-- Botón crear -->
+                {% if 'add_horarioatencion' in permissions %}
+                    <a
+                        href="{{ create_url }}"
+                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm"
+                    >
+                        <i class="fas fa-plus mr-2"></i>
+                        Nuevo Horario de Atención
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tabla de horarios de atención -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                                #
+                            </th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                                <i class="fas fa-clock"></i>
+                            </th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Día
+                            </th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
+                                Horario
+                            </th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
+                                Intervalo de Descanso
+                            </th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell w-16">
+                                Estado
+                            </th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell w-20">
+                                Doctores
+                            </th>
+                            <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
+                                Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {% for horario in horarios_atencion %}
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                                <!-- Número de fila -->
+                                <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    {{ forloop.counter|add:page_obj.start_index|add:"-1" }}
+                                </td>
+
+                                <!-- Icono representativo -->
+                                <td class="px-2 py-4 whitespace-nowrap">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-clock text-white text-sm"></i>
+                                    </div>
+                                </td>
+
+                                <!-- Día de la semana -->
+                                <td class="px-3 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ horario.get_dia_semana_display }}
+                                    </div>
+                                    <!-- En móvil, mostrar más info -->
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 md:hidden">
+                                        {{ horario.hora_inicio|time:"H:i" }} - {{ horario.hora_fin|time:"H:i" }}
+                                        {% if horario.intervalo_desde and horario.intervalo_hasta %}
+                                            <br /><span class="text-orange-600">
+                                                Pausa: {{ horario.intervalo_desde|time:"H:i" }} - {{ horario.intervalo_hasta|time:"H:i" }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+
+                                <!-- Horario principal (oculto en móvil) -->
+                                <td class="px-3 py-4 whitespace-nowrap hidden md:table-cell">
+                                    <div class="text-sm text-gray-900 dark:text-white">
+                                        <i class="fas fa-clock text-green-500 mr-1"></i>
+                                        {{ horario.hora_inicio|time:"H:i" }} - {{ horario.hora_fin|time:"H:i" }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                        {% with horario.hora_fin|time:"H"|add:0 as hora_fin_int %}
+                                            {% with horario.hora_inicio|time:"H"|add:0 as hora_inicio_int %}
+                                                Duración: {{ hora_fin_int|add:hora_inicio_int|floatformat:0|default:"--" }} horas
+                                            {% endwith %}
+                                        {% endwith %}
+                                    </div>
+                                </td>
+
+                                <!-- Intervalo de descanso (oculto en tablets y móvil) -->
+                                <td class="px-3 py-4 whitespace-nowrap hidden lg:table-cell">
+                                    {% if horario.intervalo_desde and horario.intervalo_hasta %}
+                                        <div class="text-sm text-orange-600 dark:text-orange-400">
+                                            <i class="fas fa-coffee mr-1"></i>
+                                            {{ horario.intervalo_desde|time:"H:i" }} - {{ horario.intervalo_hasta|time:"H:i" }}
+                                        </div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                                            Pausa de descanso
+                                        </div>
+                                    {% else %}
+                                        <div class="text-sm text-gray-400 dark:text-gray-500">
+                                            <i class="fas fa-minus mr-1"></i>
+                                            Sin pausa
+                                        </div>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Estado (oculto en tablets y móvil) -->
+                                <td class="px-2 py-4 whitespace-nowrap hidden lg:table-cell">
+                                    {% if horario.activo %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                            <i class="fas fa-check-circle mr-1"></i>
+                                            Activo
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                            <i class="fas fa-times-circle mr-1"></i>
+                                            Inactivo
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Doctores relacionados (oculto en tablets y móvil) -->
+                                <td class="px-2 py-4 whitespace-nowrap text-center hidden lg:table-cell">
+                                    <div class="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                        {{ horario.doctores.count }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                        doctor{{ horario.doctores.count|pluralize:"es" }}
+                                    </div>
+                                </td>
+
+                                <!-- Acciones -->
+                                <td class="px-2 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <div class="flex items-center justify-end space-x-1">
+                                        <!-- Ver/Editar -->
+                                        {% if 'change_horarioatencion' in permissions %}
+                                            <a
+                                                href="{% url 'doctor:horario_atencion_update' horario.pk %}"
+                                                class="inline-flex items-center p-1.5 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200"
+                                                title="Editar horario"
+                                            >
+                                                <i class="fas fa-edit text-sm"></i>
+                                            </a>
+                                        {% endif %}
+
+                                        <!-- Eliminar -->
+                                        {% if 'delete_horarioatencion' in permissions %}
+                                            <a
+                                                href="{% url 'doctor:horario_atencion_delete' horario.pk %}"
+                                                class="inline-flex items-center p-1.5 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-200"
+                                                title="Eliminar horario"
+                                            >
+                                                <i class="fas fa-trash text-sm"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="px-6 py-12 text-center">
+                                    <div class="text-gray-500 dark:text-gray-400">
+                                        <i class="fas fa-clock text-4xl mb-4"></i>
+                                        <h3 class="text-lg font-medium mb-2">
+                                            No hay horarios de atención
+                                        </h3>
+                                        <p class="text-sm">
+                                            No se encontraron horarios de atención registrados.
+                                            {% if 'add_horarioatencion' in permissions %}
+                                                <a href="{{ create_url }}" class="text-blue-600 hover:text-blue-500">
+                                                    Crear el primero
+                                                </a>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if is_paginated %}
+                <div class="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
+                    {% include 'components/pagination.html' %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Información adicional -->
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Estadística de horarios activos -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                            <i class="fas fa-check-circle text-green-600 dark:text-green-400"></i>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">
+                            Horarios Activos
+                        </p>
+                        <p class="text-2xl font-bold text-green-600 dark:text-green-400">
+                            {{ horarios_activos|default:0 }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Días de la semana cubiertos -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                            <i class="fas fa-calendar-week text-blue-600 dark:text-blue-400"></i>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">
+                            Días Cubiertos
+                        </p>
+                        <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                            {{ dias_cubiertos|default:0 }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Horarios con intervalos -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center">
+                            <i class="fas fa-coffee text-orange-600 dark:text-orange-400"></i>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">
+                            Con Pausas
+                        </p>
+                        <p class="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                            {{ horarios_con_pausas|default:0 }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de navegación -->
+        <div class="flex justify-center items-center mt-6">
+            <a
+                href="{% url 'home' %}"
+                class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-sm"
+            >
+                <i class="fas fa-home mr-2"></i>
+                Volver al Inicio
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos adicionales para mejorar la visualización -->
+<style>
+    /* Mejorar la visualización de la tabla en dispositivos pequeños */
+    @media (max-width: 768px) {
+        .table-container {
+            font-size: 0.875rem;
+        }
+
+        .table-container th,
+        .table-container td {
+            padding: 0.5rem;
+        }
+    }
+
+    /* Animación suave para las transiciones */
+    .transition-colors {
+        transition-property: color, background-color, border-color,
+            text-decoration-color, fill, stroke;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+    }
+
+    /* Efecto hover mejorado */
+    .hover-effect:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: all 0.2s ease-in-out;
+    }
+</style>
+
+{% endblock %}

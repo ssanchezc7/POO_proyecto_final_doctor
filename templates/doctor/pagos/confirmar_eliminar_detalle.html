@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Confirmar Eliminación{% endblock %}
+
+{% block content %}
+<div class="w-full px-2 sm:px-4 lg:px-6 py-6">
+  <!-- Navegación -->
+  <nav class="flex mb-6" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+      <li class="inline-flex items-center">
+        <a
+          href="{% url 'doctor:lista_pagos' %}"
+          class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white"
+        >
+          <i class="fas fa-credit-card mr-2"></i>
+          Pagos
+        </a>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+          <a
+            href="{% url 'doctor:detalle_pago' detalle.pago.id %}"
+            class="text-sm font-medium text-gray-700 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white"
+          >
+            Pago #{{ detalle.pago.id }}
+          </a>
+        </div>
+      </li>
+      <li>
+        <div class="flex items-center">
+          <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+          <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
+            Eliminar Detalle
+          </span>
+        </div>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Contenedor principal centrado -->
+  <div class="max-w-2xl mx-auto">
+    <!-- Header de advertencia -->
+    <div class="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-lg shadow-lg mb-6">
+      <div class="text-center">
+        <div class="bg-red-400 bg-opacity-30 p-4 rounded-full inline-block mb-4">
+          <i class="fas fa-exclamation-triangle text-4xl"></i>
+        </div>
+        <h1 class="text-3xl font-bold mb-2">Confirmar Eliminación</h1>
+        <p class="text-red-100">Esta acción no se puede deshacer</p>
+      </div>
+    </div>
+
+    <!-- Información del detalle a eliminar -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <i class="fas fa-info-circle mr-2 text-red-600"></i>Detalle a Eliminar
+      </h2>
+
+      <!-- Información del pago -->
+      <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-4">
+        <h3 class="text-md font-medium text-gray-900 dark:text-white mb-3">
+          Información del Pago
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <div>
+            <span class="font-medium text-gray-600 dark:text-gray-400">Pago #:</span>
+            <span class="text-gray-900 dark:text-white ml-2">{{ detalle.pago.id }}</span>
+          </div>
+          <div>
+            <span class="font-medium text-gray-600 dark:text-gray-400">Paciente:</span>
+            <span class="text-gray-900 dark:text-white ml-2">
+              {{ detalle.pago.atencion.paciente.nombre_completo }}
+            </span>
+          </div>
+          <div>
+            <span class="font-medium text-gray-600 dark:text-gray-400">Concepto:</span>
+            <span class="text-gray-900 dark:text-white ml-2">{{ detalle.pago.concepto }}</span>
+          </div>
+          <div>
+            <span class="font-medium text-gray-600 dark:text-gray-400">Total Actual:</span>
+            <span class="text-gray-900 dark:text-white ml-2 font-bold">
+              ${{ detalle.pago.monto_total|floatformat:2 }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información del detalle específico -->
+      <div class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 p-4 rounded-lg">
+        <h3 class="text-md font-medium text-red-900 dark:text-red-100 mb-3">
+          Detalle del Servicio
+        </h3>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="font-medium text-red-800 dark:text-red-200">Servicio:</span>
+            <span class="text-red-700 dark:text-red-300 font-semibold">
+              {{ detalle.servicio_adicional.nombre_servicio }}
+            </span>
+          </div>
+
+          {% if detalle.descripcion %}
+          <div class="flex items-start justify-between">
+            <span class="font-medium text-red-800 dark:text-red-200">Descripción:</span>
+            <span class="text-red-700 dark:text-red-300 text-right max-w-xs">
+              {{ detalle.descripcion }}
+            </span>
+          </div>
+          {% endif %}
+
+          <div class="flex items-center justify-between">
+            <span class="font-medium text-red-800 dark:text-red-200">Cantidad:</span>
+            <span class="text-red-700 dark:text-red-300">{{ detalle.cantidad }}</span>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <span class="font-medium text-red-800 dark:text-red-200">Precio Unitario:</span>
+            <span class="text-red-700 dark:text-red-300">
+              ${{ detalle.precio_unitario|floatformat:2 }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between border-t border-red-200 dark:border-red-700 pt-3">
+            <span class="font-bold text-red-800 dark:text-red-200">Subtotal:</span>
+            <span class="text-red-700 dark:text-red-300 font-bold text-lg">
+              ${{ detalle.subtotal|floatformat:2 }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advertencias -->
+    <div class="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-6">
+      <div class="flex items-start">
+        <div class="flex-shrink-0">
+          <i class="fas fa-exclamation-triangle text-yellow-600 dark:text-yellow-400 text-xl"></i>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+            Importante
+          </h3>
+          <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+            <ul class="list-disc pl-5 space-y-1">
+              <li>
+                Al eliminar este detalle, el monto total del pago se reducirá en
+                <strong>${{ detalle.subtotal|floatformat:2 }}</strong>
+              </li>
+              <li>
+                El nuevo total del pago será:
+                <strong>${{ nuevo_total|floatformat:2 }}</strong>
+              </li>
+              <li>Esta acción no se puede deshacer</li>
+              {% if detalle.pago.estado != 'pendiente' %}
+              <li class="text-red-600 dark:text-red-400 font-medium">
+                ⚠️ El pago está en estado "{{ detalle.pago.get_estado_display }}" - 
+                considera si es apropiado eliminar este detalle
+              </li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario de confirmación -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+      <form method="POST" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Checkbox de confirmación -->
+        <div class="flex items-start">
+          <div class="flex items-center h-5">
+            <input
+              id="confirmar"
+              name="confirmar"
+              type="checkbox"
+              required
+              class="focus:ring-red-500 h-4 w-4 text-red-600 border-gray-300 rounded"
+            />
+          </div>
+          <div class="ml-3 text-sm">
+            <label for="confirmar" class="font-medium text-gray-700 dark:text-gray-300">
+              Confirmo que deseo eliminar este detalle del pago
+            </label>
+            <p class="text-gray-500 dark:text-gray-400">
+              Entiendo que esta acción no se puede deshacer y que el monto total
+              del pago se ajustará automáticamente.
+            </p>
+          </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="flex flex-col sm:flex-row gap-3 pt-6 border-t dark:border-gray-700">
+          <button
+            type="submit"
+            class="flex-1 flex items-center justify-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-200 dark:focus:ring-red-800 transition-colors duration-200 font-medium"
+            onclick="return confirm('¿Está completamente seguro de eliminar este detalle?')"
+          >
+            <i class="fas fa-trash mr-2"></i>
+            Sí, Eliminar Detalle
+          </button>
+
+          <a
+            href="{% url 'doctor:detalle_pago' detalle.pago.id %}"
+            class="flex-1 flex items-center justify-center px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:ring-4 focus:ring-gray-200 transition-colors duration-200 font-medium"
+          >
+            <i class="fas fa-times mr-2"></i>
+            Cancelar
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="mt-6 text-center">
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Si no está seguro de eliminar este detalle, puede
+        <a
+          href="{% url 'doctor:detalle_pago' detalle.pago.id %}"
+          class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
+        >
+          volver al detalle del pago
+        </a>
+        para revisar la información completa.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Agregar confirmación adicional al formulario
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.querySelector("form");
+    const checkbox = document.getElementById("confirmar");
+    const submitButton = form.querySelector('button[type="submit"]');
+
+    // Deshabilitar botón si no está marcado el checkbox
+    function toggleSubmitButton() {
+      submitButton.disabled = !checkbox.checked;
+      if (checkbox.checked) {
+        submitButton.classList.remove("opacity-50", "cursor-not-allowed");
+      } else {
+        submitButton.classList.add("opacity-50", "cursor-not-allowed");
+      }
+    }
+
+    checkbox.addEventListener("change", toggleSubmitButton);
+    toggleSubmitButton(); // Estado inicial
+  });
+</script>
+{% endblock %}

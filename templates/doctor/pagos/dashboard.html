@@ -1,0 +1,303 @@
+{% extends 'base.html' %} {% load static %} {% block title %}Dashboard de
+Pagos{% endblock %} {% block content %}
+<div class="w-full px-2 sm:px-4 lg:px-6 py-6">
+  <!-- Header -->
+  <div
+    class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 rounded-lg shadow-lg mb-6"
+  >
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <!-- Botón volver al inicio -->
+        <a
+          href="{% url 'home' %}"
+          class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2"
+        >
+          <i class="fas fa-home"></i>
+          <span class="hidden sm:inline">Inicio</span>
+        </a>
+
+        <div>
+          <h1 class="text-3xl font-bold">
+            <i class="fas fa-chart-line mr-2"></i>Dashboard de Pagos
+          </h1>
+          <p class="text-indigo-100 mt-1">
+            Panel de control y gestión de pagos médicos
+          </p>
+        </div>
+      </div>
+      <div class="hidden md:block">
+        <i class="fas fa-credit-card text-6xl opacity-20"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <!-- Total Pagos -->
+    <div
+      class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-lg"
+    >
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-3xl font-bold">{{ total_pagos }}</div>
+          <div class="text-blue-100 text-sm">
+            <i class="fas fa-receipt mr-1"></i>Total Pagos
+          </div>
+        </div>
+        <div class="bg-blue-400 bg-opacity-30 p-3 rounded-full">
+          <i class="fas fa-receipt text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagos Pendientes -->
+    <div
+      class="bg-gradient-to-br from-yellow-500 to-orange-500 text-white p-6 rounded-lg shadow-lg"
+    >
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-3xl font-bold">{{ pagos_pendientes }}</div>
+          <div class="text-yellow-100 text-sm">
+            <i class="fas fa-clock mr-1"></i>Pendientes
+          </div>
+        </div>
+        <div class="bg-yellow-400 bg-opacity-30 p-3 rounded-full">
+          <i class="fas fa-clock text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagos Pagados -->
+    <div
+      class="bg-gradient-to-br from-green-500 to-emerald-600 text-white p-6 rounded-lg shadow-lg"
+    >
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-3xl font-bold">{{ pagos_pagados }}</div>
+          <div class="text-green-100 text-sm">
+            <i class="fas fa-check-circle mr-1"></i>Pagados
+          </div>
+        </div>
+        <div class="bg-green-400 bg-opacity-30 p-3 rounded-full">
+          <i class="fas fa-check-circle text-xl"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Recaudado -->
+    <div
+      class="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-6 rounded-lg shadow-lg"
+    >
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-3xl font-bold">
+            ${{ total_recaudado|floatformat:2 }}
+          </div>
+          <div class="text-purple-100 text-sm">
+            <i class="fas fa-dollar-sign mr-1"></i>Recaudado
+          </div>
+        </div>
+        <div class="bg-purple-400 bg-opacity-30 p-3 rounded-full">
+          <i class="fas fa-dollar-sign text-xl"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Gráfico de pagos por estado -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+      <h5 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <i class="fas fa-pie-chart mr-2 text-indigo-600"></i>Pagos por Estado
+      </h5>
+      <div class="flex justify-center">
+        <canvas id="estadosChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- Gráfico de ingresos mensuales -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+      <h5 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <i class="fas fa-line-chart mr-2 text-indigo-600"></i>Ingresos del
+        Último Año
+      </h5>
+      <div class="flex justify-center">
+        <canvas id="ingresosChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagos Recientes y Acciones Rápidas -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Pagos Recientes -->
+    <div
+      class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <h5 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <i class="fas fa-history mr-2 text-indigo-600"></i>Pagos Recientes
+        </h5>
+        <a
+          href="{% url 'doctor:lista_pagos' %}"
+          class="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+        >
+          Ver todos
+        </a>
+      </div>
+
+      {% if pagos_recientes %}
+      <div class="space-y-4">
+        {% for pago in pagos_recientes %}
+        <div
+          class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200"
+        >
+          <div class="flex items-center space-x-4">
+            <div class="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full">
+              <i
+                class="fas fa-user-injured text-indigo-600 dark:text-indigo-400"
+              ></i>
+            </div>
+            <div>
+              <div class="font-medium text-gray-900 dark:text-white">
+                {{ pago.atencion.paciente.nombre_completo }}
+              </div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">
+                {{ pago.fecha_creacion|date:"d/m/Y" }} - {{ pago.concepto }}
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="font-bold text-lg text-gray-900 dark:text-white">
+              ${{ pago.monto_total|floatformat:2 }}
+            </div>
+            <span
+              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if pago.estado == 'pendiente' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% elif pago.estado == 'pagado' %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% else %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% endif %}"
+            >
+              {{ pago.get_estado_display }}
+            </span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-8">
+        <i class="fas fa-receipt text-gray-400 text-4xl mb-4"></i>
+        <p class="text-gray-500 dark:text-gray-400">No hay pagos recientes</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+      <h5 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <i class="fas fa-bolt mr-2 text-indigo-600"></i>Acciones Rápidas
+      </h5>
+
+      <div class="space-y-3">
+        <a
+          href="{% url 'doctor:lista_pagos' %}?estado=pendiente"
+          class="flex items-center justify-center w-full px-4 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors duration-200"
+        >
+          <i class="fas fa-clock mr-2"></i>
+          Ver Pendientes
+        </a>
+
+        <a
+          href="{% url 'doctor:lista_pagos' %}?estado=pagado"
+          class="flex items-center justify-center w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200"
+        >
+          <i class="fas fa-check mr-2"></i>
+          Ver Pagados
+        </a>
+
+        <div class="border-t dark:border-gray-700 pt-3">
+          <h6 class="text-sm font-medium text-gray-900 dark:text-white mb-2">
+            Reportes
+          </h6>
+          <a
+            href="#"
+            class="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 py-1"
+          >
+            <i class="fas fa-file-pdf mr-2"></i>
+            Reporte Mensual
+          </a>
+          <a
+            href="#"
+            class="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 py-1"
+          >
+            <i class="fas fa-chart-bar mr-2"></i>
+            Análisis de Ingresos
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Configuración de gráficos
+  const ctx1 = document.getElementById('estadosChart').getContext('2d');
+  const estadosChart = new Chart(ctx1, {
+      type: 'doughnut',
+      data: {
+          labels: ['Pendientes', 'Pagados', 'Cancelados'],
+          datasets: [{
+              data: [{{ pagos_pendientes }}, {{ pagos_pagados }}, {{ pagos_cancelados|default:0 }}],
+              backgroundColor: [
+                  '#F59E0B',
+                  '#10B981',
+                  '#EF4444'
+              ],
+              borderWidth: 0
+          }]
+      },
+      options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+              legend: {
+                  position: 'bottom'
+              }
+          }
+      }
+  });
+
+  const ctx2 = document.getElementById('ingresosChart').getContext('2d');
+  const ingresosChart = new Chart(ctx2, {
+      type: 'line',
+      data: {
+          labels: {{ meses_labels|safe }},
+          datasets: [{
+              label: 'Ingresos ($)',
+              data: {{ ingresos_mensuales|safe }},
+              borderColor: '#6366F1',
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.4
+          }]
+      },
+      options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+              legend: {
+                  display: false
+              }
+          },
+          scales: {
+              y: {
+                  beginAtZero: true,
+                  ticks: {
+                      callback: function(value) {
+                          return '$' + value.toLocaleString();
+                      }
+                  }
+              }
+          }
+      }
+  });
+</script>
+{% endblock %}

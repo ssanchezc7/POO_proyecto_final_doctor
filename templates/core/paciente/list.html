@@ -1,0 +1,563 @@
+{% extends 'base.html' %}
+{% block title %}Lista de Pacientes - SaludTotal{% endblock %}
+{% block content %}
+{% load static %}
+
+<div class="container mx-auto px-4 py-6 max-w-7xl">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-lg shadow-lg mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold">Gestión de Pacientes</h1>
+                <p class="text-green-100 mt-1">
+                    Administra los pacientes de la clínica
+                </p>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold">{{ pacientes|length }}</div>
+                <div class="text-sm text-green-100">Total Pacientes</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de búsqueda y acciones -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <!-- Búsqueda -->
+            <div class="flex-1 max-w-md">
+                <form method="GET" class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ request.GET.q }}"
+                        placeholder="Buscar pacientes..."
+                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                    />
+                </form>
+            </div>
+
+            <!-- Botón crear -->
+            {% if 'add_paciente' in permissions %}
+            <a
+                href="{{ create_url }}"
+                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm"
+            >
+                <i class="fas fa-plus mr-2"></i>
+                Nuevo Paciente
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tabla de pacientes -->
+    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                            #
+                        </th>
+                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                            <i class="fas fa-user-injured"></i>
+                        </th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Paciente
+                        </th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
+                            Información Personal
+                        </th>
+                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
+                            Edad / Sangre
+                        </th>
+                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden xl:table-cell">
+                            Información Médica
+                        </th>
+                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
+                            Acciones
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for paciente in pacientes %}
+                    <tr>
+                        <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300 text-center">
+                            {{ paciente.id }}
+                        </td>
+                        <td class="px-2 py-2 whitespace-nowrap text-center">
+                            {% if paciente.foto %}
+                            <img
+                                src="{{ paciente.foto.url }}"
+                                alt="{{ paciente.nombre_completo }}"
+                                class="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"
+                            />
+                            {% else %}
+                            <div class="flex items-center justify-center w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full">
+                                <i class="fas fa-user-injured text-green-600 dark:text-green-400 text-sm"></i>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td class="px-3 py-2 text-left">
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                    {{ paciente.nombre_completo }}
+                                </span>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                    {{ paciente.get_sexo_display }}
+                                </span>
+                                {% if paciente.estado_civil %}
+                                <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                                    {{ paciente.get_estado_civil_display }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <!-- Información adicional para móviles -->
+                            <div class="mt-1 md:hidden">
+                                <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    <i class="fas fa-id-card mr-1"></i>{{ paciente.cedula_ecuatoriana }}
+                                    <i class="fas fa-phone ml-2 mr-1"></i>{{ paciente.telefono|truncatechars:12 }}
+                                </div>
+                                <div class="text-xs mt-1">
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                        <i class="fas fa-birthday-cake mr-1"></i>{{ paciente.edad }} años
+                                    </span>
+                                    {% if paciente.tipo_sangre %}
+                                    <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                        <i class="fas fa-tint mr-1"></i>{{ paciente.tipo_sangre.tipo }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap hidden md:table-cell text-left">
+                            <div class="text-sm text-gray-900 dark:text-gray-300">
+                                <div class="font-medium flex items-center">
+                                    <i class="fas fa-id-card text-gray-400 mr-2"></i>
+                                    {{ paciente.cedula_ecuatoriana }}
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
+                                    <i class="fas fa-phone text-gray-400 mr-2"></i>
+                                    {{ paciente.telefono|truncatechars:15 }}
+                                </div>
+                                {% if paciente.email %}
+                                <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
+                                    <i class="fas fa-envelope text-gray-400 mr-2"></i>
+                                    {{ paciente.email|truncatechars:20 }}
+                                </div>
+                                {% endif %}
+                                {% if paciente.direccion %}
+                                <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
+                                    <i class="fas fa-map-marker-alt text-gray-400 mr-2"></i>
+                                    {{ paciente.direccion|truncatechars:25 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-2 py-2 whitespace-nowrap hidden lg:table-cell text-center">
+                            <div class="text-center">
+                                <div class="mb-2">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                        <i class="fas fa-birthday-cake mr-1"></i>
+                                        {{ paciente.edad }} años
+                                    </span>
+                                </div>
+                                <div>
+                                    {% if paciente.tipo_sangre %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                        <i class="fas fa-tint mr-1"></i>
+                                        {{ paciente.tipo_sangre.tipo }}
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                                        <i class="fas fa-question mr-1"></i>
+                                        Sin definir
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-2 py-2 whitespace-nowrap hidden xl:table-cell text-center">
+                            <div class="text-xs space-y-1">
+                                {% if paciente.alergias %}
+                                <div
+                                    class="medical-badge inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 mb-1"
+                                    title="Alergias: {{ paciente.alergias|truncatechars:50 }}"
+                                >
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    Alergias
+                                </div>
+                                {% endif %}
+                                {% if paciente.medicamentos_actuales %}
+                                <div
+                                    class="medical-badge inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 mb-1"
+                                    title="Medicamentos: {{ paciente.medicamentos_actuales|truncatechars:50 }}"
+                                >
+                                    <i class="fas fa-pills mr-1"></i>
+                                    Medicación
+                                </div>
+                                {% endif %}
+                                {% if paciente.antecedentes_personales %}
+                                <div
+                                    class="medical-badge inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 mb-1"
+                                    title="Antecedentes: {{ paciente.antecedentes_personales|truncatechars:50 }}"
+                                >
+                                    <i class="fas fa-clipboard-list mr-1"></i>
+                                    Antecedentes
+                                </div>
+                                {% endif %}
+                                {% if paciente.habitos_toxicos and paciente.habitos_toxicos != 'ninguno' %}
+                                <div
+                                    class="medical-badge inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                    title="Hábitos: {{ paciente.habitos_toxicos }}"
+                                >
+                                    <i class="fas fa-smoking mr-1"></i>
+                                    Hábitos
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-2 py-2 whitespace-nowrap text-center text-sm font-medium">
+                            <div class="flex items-center justify-center space-x-1">
+                                {% if 'change_paciente' in permissions %}
+                                <a
+                                    href="{% url 'core:paciente_update' paciente.pk %}"
+                                    class="inline-flex items-center px-1.5 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors duration-200 text-xs"
+                                    title="Editar"
+                                >
+                                    <i class="fas fa-edit text-xs"></i>
+                                </a>
+                                {% endif %}
+                                {% if 'delete_paciente' in permissions %}
+                                <button
+                                    onclick="confirmDelete('{{ paciente.pk }}', '{{ paciente.nombre_completo }}')"
+                                    class="inline-flex items-center px-1.5 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors duration-200 text-xs"
+                                    title="Eliminar"
+                                >
+                                    <i class="fas fa-trash text-xs"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-user-injured text-4xl text-gray-400 mb-4"></i>
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                                    No hay pacientes
+                                </h3>
+                                <p class="text-gray-500 dark:text-gray-400 mb-4">
+                                    Comienza agregando el primer paciente al sistema.
+                                </p>
+                                {% if 'add_paciente' in permissions %}
+                                <a
+                                    href="{{ create_url }}"
+                                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                                >
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Agregar Primer Paciente
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginación reutilizable -->
+    {% include 'components/pagination.html' %}
+
+    <!-- Botones de navegación -->
+    <div class="flex justify-center items-center mt-6">
+        <a
+            href="{% url 'home' %}"
+            class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-sm"
+        >
+            <i class="fas fa-home mr-2"></i>
+            Ir al Inicio
+        </a>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <div class="sm:flex sm:items-start">
+                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900 sm:mx-0 sm:h-10 sm:w-10">
+                    <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400"></i>
+                </div>
+                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                        Confirmar Eliminación
+                    </h3>
+                    <div class="mt-2">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            ¿Estás seguro que deseas eliminar al paciente
+                            <span id="pacienteName" class="font-semibold"></span>? Esta acción
+                            no se puede deshacer.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                <form id="deleteForm" method="POST" class="inline">
+                    {% csrf_token %}
+                    <button
+                        type="submit"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-200"
+                    >
+                        <i class="fas fa-trash mr-2"></i>
+                        Eliminar
+                    </button>
+                </form>
+                <button
+                    type="button"
+                    onclick="closeDeleteModal()"
+                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:w-auto sm:text-sm transition-colors duration-200"
+                >
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDelete(pacienteId, pacienteNombre) {
+        document.getElementById("pacienteName").textContent = pacienteNombre;
+        document.getElementById("deleteForm").action = `/core/paciente_delete/${pacienteId}/`;
+        document.getElementById("deleteModal").classList.remove("hidden");
+    }
+
+    function closeDeleteModal() {
+        document.getElementById("deleteModal").classList.add("hidden");
+    }
+
+    // Cerrar modal con ESC
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            closeDeleteModal();
+        }
+    });
+
+    // Cerrar modal al hacer clic fuera
+    document.getElementById("deleteModal").addEventListener("click", function (event) {
+        if (event.target === this) {
+            closeDeleteModal();
+        }
+    });
+
+    // Auto submit del formulario de búsqueda con debounce
+    const searchInput = document.querySelector('input[name="q"]');
+    if (searchInput) {
+        searchInput.addEventListener("input", function () {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.form.submit();
+            }, 800);
+        });
+    }
+
+    // Optimizar responsividad
+    function adjustTableForMobile() {
+        const table = document.querySelector("table");
+        const container = document.querySelector(".container");
+        const medicalBadges = document.querySelectorAll(".medical-badge");
+        const isMobile = window.innerWidth < 768;
+
+        if (isMobile && table) {
+            table.classList.add("text-xs");
+            if (container) {
+                container.classList.add("px-2");
+            }
+            // Agregar clase fade-in a los badges médicos
+            medicalBadges.forEach((badge) => {
+                badge.classList.add("fade-in");
+            });
+        } else if (table) {
+            table.classList.remove("text-xs");
+            if (container) {
+                container.classList.remove("px-2");
+            }
+        }
+    }
+
+    let resizeTimeout;
+    window.addEventListener("load", function () {
+        adjustTableForMobile();
+        // Inicializar tooltips para badges médicos
+        initializeMedicalBadgeTooltips();
+    });
+
+    window.addEventListener("resize", function () {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(adjustTableForMobile, 150);
+    });
+
+    // Función para mostrar tooltips en badges médicos
+    function initializeMedicalBadgeTooltips() {
+        const badges = document.querySelectorAll(".medical-badge");
+        badges.forEach((badge) => {
+            badge.addEventListener("mouseenter", function () {
+                this.style.zIndex = "10";
+            });
+            badge.addEventListener("mouseleave", function () {
+                this.style.zIndex = "1";
+            });
+        });
+    }
+
+    // Mejorar la búsqueda para incluir tipo de sangre
+    const searchInput = document.querySelector('input[name="q"]');
+    if (searchInput) {
+        searchInput.setAttribute(
+            "placeholder",
+            "Buscar por nombre, cédula, teléfono, email o tipo de sangre..."
+        );
+
+        // Agregar indicador visual de búsqueda activa
+        searchInput.addEventListener("input", function () {
+            clearTimeout(this.searchTimeout);
+            this.classList.add("border-blue-400");
+
+            this.searchTimeout = setTimeout(() => {
+                this.form.submit();
+            }, 800);
+        });
+
+        searchInput.addEventListener("blur", function () {
+            this.classList.remove("border-blue-400");
+        });
+    }
+</script>
+
+<style>
+    .container {
+        max-width: 100% !important;
+    }
+
+    @media (max-width: 640px) {
+        .container {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
+        table {
+            font-size: 0.75rem;
+        }
+
+        th, td {
+            padding: 0.25rem 0.125rem;
+        }
+    }
+
+    .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        max-width: 100%;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar {
+        height: 3px;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 2px;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 2px;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+    .truncate {
+        max-width: 200px;
+    }
+
+    @media (max-width: 768px) {
+        .truncate {
+            max-width: 120px;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .truncate {
+            max-width: 80px;
+        }
+    }
+
+    /* Estilos adicionales para la información médica */
+    .medical-badge {
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .medical-badge:hover {
+        transform: scale(1.05);
+    }
+
+    /* Animación suave para los badges */
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Estilos mejorados para responsive */
+    @media (max-width: 1024px) {
+        .xl\:table-cell {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .lg\:table-cell {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .md\:table-cell {
+            display: none !important;
+        }
+    }
+
+    /* Mejorar la legibilidad en modo oscuro */
+    .dark .bg-white {
+        background-color: #1f2937;
+    }
+
+    .dark .text-gray-900 {
+        color: #f3f4f6;
+    }
+</style>
+{% endblock %}

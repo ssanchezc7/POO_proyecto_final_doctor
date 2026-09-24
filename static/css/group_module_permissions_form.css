@@ -1,0 +1,80 @@
+/* Estilos para el formulario de asignación de permisos grupo-módulo */
+
+/* Estilos personalizados para checkboxes */
+input[type="checkbox"].permission-checkbox {
+    width: 1rem;
+    height: 1rem;
+    color: #2563eb;
+    border-radius: 0.25rem;
+    border: 1px solid #d1d5db;
+    background-color: #ffffff;
+}
+
+input[type="checkbox"].permission-checkbox:checked {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+input[type="checkbox"].permission-checkbox:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px #3b82f6;
+}
+
+/* Dark mode styles */
+.dark input[type="checkbox"].permission-checkbox {
+    background-color: #374151;
+    border-color: #4b5563;
+}
+
+.dark input[type="checkbox"].permission-checkbox:checked {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+/* Mejorar la apariencia de los botones pequeños */
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease-in-out;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-create {
+    background-color: #10b981;
+    color: white;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.btn-create:hover {
+    background-color: #059669;
+}
+
+.btn-create-module {
+    background-color: #3b82f6;
+    color: white;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.btn-create-module:hover {
+    background-color: #2563eb;
+}
+
+/* Mejorar la visualización de permisos */
+.permission-item {
+    transition: background-color 0.15s ease-in-out;
+}
+
+.permission-item:hover {
+    background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Estilo para el contador de permisos */
+.permission-counter {
+    font-size: 0.75rem;
+    color: #6b7280;
+}

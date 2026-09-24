@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lista de Pagos{% endblock %}
+
+{% block content %}
+<div class="w-full px-2 sm:px-4 lg:px-6 py-6">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 rounded-lg shadow-lg mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <!-- Botón volver al dashboard -->
+                <a href="{% url 'doctor:dashboard_pagos' %}" 
+                   class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2">
+                    <i class="fas fa-arrow-left"></i>
+                    <span class="hidden sm:inline">Dashboard</span>
+                </a>
+                
+                <div>
+                    <h1 class="text-3xl font-bold">
+                        <i class="fas fa-credit-card mr-2"></i>Gestión de Pagos
+                    </h1>
+                    <p class="text-indigo-100 mt-1">
+                        Administra y controla todos los pagos médicos
+                    </p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold">{{ pagos.count }}</div>
+                <div class="text-sm text-indigo-100">Total Pagos</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de búsqueda y filtros -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+        <form method="GET" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Búsqueda por paciente -->
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input
+                        type="text"
+                        name="paciente"
+                        value="{{ request.GET.paciente }}"
+                        placeholder="Buscar por paciente..."
+                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                    />
+                </div>
+
+                <!-- Filtro por estado -->
+                <select 
+                    name="estado" 
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="">Todos los estados</option>
+                    <option value="pendiente" {% if request.GET.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                    <option value="pagado" {% if request.GET.estado == 'pagado' %}selected{% endif %}>Pagado</option>
+                    <option value="cancelado" {% if request.GET.estado == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                </select>
+
+                <!-- Filtro por fecha -->
+                <input
+                    type="date"
+                    name="fecha"
+                    value="{{ request.GET.fecha }}"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+
+                <!-- Botones -->
+                <div class="flex space-x-2">
+                    <button
+                        type="submit"
+                        class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+                    >
+                        <i class="fas fa-filter mr-1"></i>Filtrar
+                    </button>
+                    <a
+                        href="{% url 'doctor:lista_pagos' %}"
+                        class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200"
+                    >
+                        <i class="fas fa-undo"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+
+    </div>
+
+    <!-- Lista de pagos -->
+    {% if pagos %}
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {% for pago in pagos %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+                <!-- Header del pago -->
+                <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-lg">Pago #{{ pago.id }}</h3>
+                            <p class="text-indigo-100 text-sm">{{ pago.concepto }}</p>
+                        </div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if pago.estado == 'pendiente' %}
+                                bg-yellow-200 text-yellow-800
+                            {% elif pago.estado == 'pagado' %}
+                                bg-green-200 text-green-800
+                            {% else %}
+                                bg-red-200 text-red-800
+                            {% endif %}">
+                            {{ pago.get_estado_display }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Cuerpo del pago -->
+                <div class="p-4 space-y-3">
+                    <!-- Información del paciente -->
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full">
+                            <i class="fas fa-user-injured text-indigo-600 dark:text-indigo-400"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">
+                                {{ pago.atencion.paciente.nombre_completo }}
+                            </p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Atención: {{ pago.atencion.fecha_atencion|date:"d/m/Y" }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Monto total -->
+                    <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Monto Total:</span>
+                            <span class="text-2xl font-bold text-gray-900 dark:text-white">
+                                ${{ pago.monto_total|floatformat:2 }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Fechas -->
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400">Creado:</span>
+                            <p class="font-medium text-gray-900 dark:text-white">
+                                {{ pago.fecha_creacion|date:"d/m/Y" }}
+                            </p>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 dark:text-gray-400">Vencimiento:</span>
+                            <p class="font-medium text-gray-900 dark:text-white">
+                                {{ pago.fecha_vencimiento|date:"d/m/Y" }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Resumen de detalles del pago -->
+                    <div class="bg-blue-50 dark:bg-blue-900 p-3 rounded-lg">
+                        <p class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                            <i class="fas fa-list mr-1"></i>Incluye:
+                        </p>
+                        <div class="space-y-1">
+                            {% for detalle in pago.detalles.all %}
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-blue-700 dark:text-blue-300">
+                                    {% if 'Medicamento:' in detalle.servicio_adicional.nombre_servicio %}
+                                        <i class="fas fa-pills mr-1"></i>
+                                    {% elif 'Consulta Médica' in detalle.servicio_adicional.nombre_servicio %}
+                                        <i class="fas fa-stethoscope mr-1"></i>
+                                    {% else %}
+                                        <i class="fas fa-cog mr-1"></i>
+                                    {% endif %}
+                                    {{ detalle.servicio_adicional.nombre_servicio|truncatechars:25 }}
+                                    {% if detalle.cantidad > 1 %} (x{{ detalle.cantidad }}){% endif %}
+                                </span>
+                                <span class="text-blue-800 dark:text-blue-200 font-medium">
+                                    ${{ detalle.subtotal|floatformat:2 }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="flex flex-wrap gap-2 pt-3 border-t dark:border-gray-700">
+                        <a
+                            href="{% url 'doctor:detalle_pago' pago.id %}"
+                            class="flex-1 text-center px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 transition-colors duration-200 text-sm"
+                        >
+                            <i class="fas fa-eye mr-1"></i>Ver
+                        </a>
+                        
+                        {% if pago.estado == 'pendiente' %}
+                        <a
+                            href="{% url 'doctor:procesar_pago_paypal' pago.id %}"
+                            class="flex-1 text-center px-3 py-1.5 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors duration-200 text-sm"
+                        >
+                            <i class="fab fa-paypal mr-1"></i>Pagar
+                        </a>
+                        {% endif %}
+                        
+                        <a
+                            href="{% url 'doctor:agregar_detalle_pago' pago.id %}"
+                            class="flex-1 text-center px-3 py-1.5 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition-colors duration-200 text-sm"
+                        >
+                            <i class="fas fa-plus mr-1"></i>Detalle
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if is_paginated %}
+        <div class="mt-8 flex justify-center">
+            <nav class="flex items-center space-x-1">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if request.GET.paciente %}&paciente={{ request.GET.paciente }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.fecha %}&fecha={{ request.GET.fecha }}{% endif %}" 
+                       class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.paciente %}&paciente={{ request.GET.paciente }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.fecha %}&fecha={{ request.GET.fecha }}{% endif %}" 
+                       class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                {% endif %}
+
+                <span class="px-4 py-2 text-sm text-gray-700 bg-indigo-50 border border-indigo-200 rounded-md">
+                    {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.paciente %}&paciente={{ request.GET.paciente }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.fecha %}&fecha={{ request.GET.fecha }}{% endif %}" 
+                       class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.paciente %}&paciente={{ request.GET.paciente }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.fecha %}&fecha={{ request.GET.fecha }}{% endif %}" 
+                       class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+
+    {% else %}
+        <!-- Estado vacío -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-12 text-center">
+            <div class="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-receipt text-gray-400 text-3xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No hay pagos registrados</h3>
+            <p class="text-gray-500 dark:text-gray-400 mb-6">
+                {% if request.GET.paciente or request.GET.estado or request.GET.fecha %}
+                    No se encontraron pagos que coincidan con los filtros aplicados.
+                {% else %}
+                    Comienza creando tu primer pago médico.
+                {% endif %}
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                {% if request.GET.paciente or request.GET.estado or request.GET.fecha %}
+                    <a href="{% url 'doctor:lista_pagos' %}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <i class="fas fa-undo mr-2"></i>
+                        Limpiar filtros
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

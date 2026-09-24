@@ -1,0 +1,394 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Atenciones - SaludTotal{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<div class="w-full px-2 sm:px-4 lg:px-6 py-6">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-6 rounded-lg shadow-lg mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold">Gestión de Atenciones Médicas</h1>
+                <p class="text-emerald-100 mt-1">
+                    Administra las atenciones médicas de los pacientes
+                </p>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold">{{ page_obj.paginator.count }}</div>
+                <div class="text-sm text-emerald-100">Total Atenciones</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de búsqueda y acciones -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <!-- Búsqueda -->
+            <div class="flex-1 max-w-md">
+                <form method="GET" class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ request.GET.q }}"
+                        placeholder="Buscar por paciente, diagnóstico o motivo..."
+                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                    />
+                </form>
+            </div>
+
+            <!-- Botón crear -->
+            {% if permissions.add_atencion %}
+            <a
+                href="{% url 'doctor:atencion_create' %}"
+                class="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 shadow-sm"
+            >
+                <i class="fas fa-plus mr-2"></i>
+                Nueva Atención Médica
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tabla de atenciones -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                            #
+                        </th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Paciente
+                        </th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
+                            Fecha de Atención
+                        </th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
+                            Motivo de Consulta
+                        </th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden xl:table-cell">
+                            Síntomas
+                        </th>
+                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden xl:table-cell">
+                            Diagnósticos
+                        </th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden xl:table-cell">
+                            Tratamiento
+                        </th>
+                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
+                            Acciones
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for atencion in atenciones %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                        <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300 text-center">
+                            {{ atencion.id }}
+                        </td>
+                        <td class="px-3 py-2 text-left">
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+                                    {{ atencion.paciente.nombres }} {{ atencion.paciente.apellidos }}
+                                </span>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                    <i class="fas fa-id-card mr-1"></i>{{ atencion.paciente.numero_identificacion }}
+                                </span>
+                            </div>
+                            <!-- Información adicional para móviles -->
+                            <div class="mt-1 md:hidden">
+                                <div class="text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-calendar mr-1"></i>{{ atencion.fecha_atencion|date:"d/m/Y" }}
+                                    <i class="fas fa-clock ml-2 mr-1"></i>{{ atencion.fecha_atencion|time:"H:i" }}
+                                </div>
+                                {% if atencion.motivo_consulta %}
+                                <div class="text-xs mt-1 text-gray-600 dark:text-gray-400">
+                                    <i class="fas fa-comment-medical mr-1"></i>{{ atencion.motivo_consulta|truncatechars:30 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-3 py-2 whitespace-nowrap hidden md:table-cell text-left">
+                            <div class="text-sm text-gray-900 dark:text-gray-300">
+                                <div class="font-medium flex items-center">
+                                    <i class="fas fa-calendar text-gray-400 mr-2"></i>
+                                    {{ atencion.fecha_atencion|date:"d/m/Y" }}
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
+                                    <i class="fas fa-clock text-gray-400 mr-2"></i>
+                                    {{ atencion.fecha_atencion|time:"H:i" }}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-3 py-2 hidden lg:table-cell text-left">
+                            <div class="max-w-xs">
+                                {% if atencion.motivo_consulta %}
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    {{ atencion.motivo_consulta|truncatechars:60 }}
+                                </p>
+                                {% else %}
+                                <span class="text-gray-400 italic text-xs">Sin especificar</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-3 py-2 hidden xl:table-cell text-left">
+                            <div class="max-w-xs">
+                                {% if atencion.sintomas %}
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    {{ atencion.sintomas|truncatechars:50 }}
+                                </p>
+                                {% else %}
+                                <span class="text-gray-400 italic text-xs">Sin registrar</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-2 py-2 whitespace-nowrap hidden xl:table-cell text-center">
+                            <div class="flex flex-wrap gap-1 justify-center">
+                                {% for diagnostico in atencion.diagnostico.all %}
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                    {{ diagnostico.codigo }}
+                                </span>
+                                {% empty %}
+                                <span class="text-gray-400 italic text-xs">Sin diagnóstico</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="px-3 py-2 hidden xl:table-cell text-left">
+                            <div class="max-w-xs">
+                                {% if atencion.tratamiento %}
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    {{ atencion.tratamiento|truncatechars:50 }}
+                                </p>
+                                {% else %}
+                                <span class="text-gray-400 italic text-xs">Sin tratamiento</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-2 py-2 whitespace-nowrap text-center text-sm font-medium">
+                            <div class="flex items-center justify-center space-x-1">
+                                {% if permissions.view_atencion %}
+                                <button
+                                    onclick="openDetailModal('{{ atencion.id }}')"
+                                    class="inline-flex items-center px-1.5 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors duration-200 text-xs"
+                                    title="Ver Detalle"
+                                >
+                                    <i class="fas fa-eye text-xs"></i>
+                                </button>
+                                {% endif %}
+                                {% if permissions.change_atencion %}
+                                <a
+                                    href="{% url 'doctor:atencion_update' atencion.id %}"
+                                    class="inline-flex items-center px-1.5 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors duration-200 text-xs"
+                                    title="Editar"
+                                >
+                                    <i class="fas fa-edit text-xs"></i>
+                                </a>
+                                {% endif %}
+                                {% if permissions.delete_atencion %}
+                                <button
+                                    onclick="openDeleteModal('{{ atencion.id }}', '{{ atencion.paciente.nombres }} {{ atencion.paciente.apellidos }}')"
+                                    class="inline-flex items-center px-1.5 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors duration-200 text-xs"
+                                    title="Eliminar"
+                                >
+                                    <i class="fas fa-trash text-xs"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-stethoscope text-4xl text-gray-400 mb-4"></i>
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                                    No hay atenciones médicas
+                                </h3>
+                                <p class="text-gray-500 dark:text-gray-400 mb-4">
+                                    {% if request.GET.q %}
+                                        No se encontraron atenciones que coincidan con "{{ request.GET.q }}"
+                                    {% else %}
+                                        Comienza registrando la primera atención médica.
+                                    {% endif %}
+                                </p>
+                                {% if permissions.add_atencion %}
+                                <a
+                                    href="{% url 'doctor:atencion_create' %}"
+                                    class="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200"
+                                >
+                                    <i class="fas fa-plus mr-2"></i>
+                                    {% if request.GET.q %}
+                                        Nueva Atención
+                                    {% else %}
+                                        Registrar Primera Atención
+                                    {% endif %}
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginación reutilizable -->
+    {% include 'components/pagination.html' %}
+
+    <!-- Botones de navegación -->
+    <div class="flex justify-center items-center mt-6">
+        <a
+            href="{% url 'home' %}"
+            class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-sm"
+        >
+            <i class="fas fa-home mr-2"></i>
+            Ir al Inicio
+        </a>
+    </div>
+
+    <!-- Estadísticas resumidas -->
+    {% if page_obj.paginator.count > 0 %}
+    <div class="mt-6 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-gray-800 dark:to-gray-900 rounded-lg">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow">
+                <h4 class="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+                    Total Atenciones
+                </h4>
+                <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {{ page_obj.paginator.count }}
+                </p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow">
+                <h4 class="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                    Página Actual
+                </h4>
+                <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow">
+                <h4 class="text-lg font-semibold text-purple-600 dark:text-purple-400">
+                    Mostrando
+                </h4>
+                <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {{ atenciones|length }} registros
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de confirmación de eliminación -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <div class="sm:flex sm:items-start">
+                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <i class="fas fa-exclamation-triangle text-red-600"></i>
+                </div>
+                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                        Eliminar Atención Médica
+                    </h3>
+                    <div class="mt-2">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            ¿Estás seguro de que deseas eliminar esta atención médica? Esta acción no se puede deshacer.
+                        </p>
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mt-2" id="deleteDescription">
+                            <!-- Descripción específica se insertará aquí -->
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                <form id="deleteForm" method="post" class="inline">
+                    {% csrf_token %}
+                    <button
+                        type="submit"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+                    >
+                        <i class="fas fa-trash mr-2"></i>
+                        Eliminar
+                    </button>
+                </form>
+                <button
+                    type="button"
+                    onclick="closeDeleteModal()"
+                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                >
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openDeleteModal(id, patientName) {
+        const deleteForm = document.getElementById("deleteForm");
+        deleteForm.action = `{% url 'doctor:atencion_delete' 0 %}`.replace("0", id);
+        document.getElementById("deleteDescription").textContent = `Atención #${id} - Paciente: ${patientName}`;
+        document.getElementById("deleteModal").classList.remove("hidden");
+    }
+
+    function closeDeleteModal() {
+        document.getElementById("deleteModal").classList.add("hidden");
+    }
+
+    // Enhanced delete form handling
+    document.addEventListener("DOMContentLoaded", function () {
+        const deleteForm = document.getElementById("deleteForm");
+
+        if (deleteForm) {
+            deleteForm.addEventListener("submit", function (e) {
+                const submitBtn = deleteForm.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Eliminando...';
+                    submitBtn.disabled = true;
+                }
+            });
+        }
+
+        // Enhanced search functionality
+        const searchInput = document.querySelector('input[name="q"]');
+        if (searchInput) {
+            searchInput.addEventListener("keyup", function (e) {
+                if (e.key === "Enter") {
+                    this.form.submit();
+                }
+            });
+        }
+
+        // Add loading state for action buttons
+        document.querySelectorAll('a[href*="atencion"]').forEach((link) => {
+            link.addEventListener("click", function () {
+                const icon = this.querySelector("i");
+                if (icon && !this.href.includes("#")) {
+                    const originalClass = icon.className;
+                    icon.className = "fas fa-spinner fa-spin";
+                    setTimeout(() => {
+                        icon.className = originalClass;
+                    }, 2000);
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}

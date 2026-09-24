@@ -1,0 +1,69 @@
+{% load static %} {% if messages %}
+<div
+  id="messagesContainer"
+  class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4"
+>
+  {% for message in messages %}
+  <div
+    id="message-{{ forloop.counter }}"
+    class="relative mb-4 p-5 rounded-xl shadow-2xl border-l-8 border-4 overflow-hidden animate-slide-in-down backdrop-blur-sm {% if message.tags == 'success' %} bg-emerald-600 border-l-emerald-400 border-emerald-500 text-white shadow-emerald-900/60 {% elif message.tags == 'error' %} bg-red-600 border-l-red-400 border-red-500 text-white animate-shake shadow-red-900/60 {% elif message.tags == 'warning' %} bg-amber-600 border-l-amber-400 border-amber-500 text-white shadow-amber-900/60 {% elif message.tags == 'info' %} bg-blue-600 border-l-blue-400 border-blue-500 text-white shadow-blue-900/60 {% endif %} dark:{% if message.tags == 'success' %}bg-emerald-700 border-l-emerald-300 border-emerald-400 text-emerald-50 shadow-emerald-900/80{% elif message.tags == 'error' %}bg-red-700 border-l-red-300 border-red-400 text-red-50 shadow-red-900/80{% elif message.tags == 'warning' %}bg-amber-700 border-l-amber-300 border-amber-400 text-amber-50 shadow-amber-900/80{% elif message.tags == 'info' %}bg-blue-700 border-l-blue-300 border-blue-400 text-blue-50 shadow-blue-900/80{% endif %}"
+    data-message-id="{{ forloop.counter }}"
+  >
+    <div class="flex items-start justify-between">
+      <div class="flex items-start gap-3 flex-1">
+        <!-- Icono según tipo de mensaje -->
+        <div class="flex-shrink-0 pt-0.5">
+          {% if message.tags == 'success' %}
+          <div
+            class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white text-lg shadow-xl border-2 border-white/30"
+          >
+            <i class="fa-solid fa-check font-bold"></i>
+          </div>
+          {% elif message.tags == 'error' %}
+          <div
+            class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white text-lg shadow-xl border-2 border-white/30"
+          >
+            <i class="fa-solid fa-times font-bold"></i>
+          </div>
+          {% elif message.tags == 'warning' %}
+          <div
+            class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white text-lg shadow-xl border-2 border-white/30"
+          >
+            <i class="fa-solid fa-exclamation font-bold"></i>
+          </div>
+          {% elif message.tags == 'info' %}
+          <div
+            class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white text-lg shadow-xl border-2 border-white/30"
+          >
+            <i class="fa-solid fa-info font-bold"></i>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Contenido del mensaje -->
+        <div class="flex-1">
+          <p
+            class="m-0 font-bold text-base leading-relaxed text-white drop-shadow-sm"
+          >
+            {{ message|safe }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Botón cerrar -->
+      <button
+        onclick="closeMessage({{ forloop.counter }})"
+        class="flex-shrink-0 ml-4 p-2 border-none bg-white/20 rounded-full cursor-pointer hover:bg-white/30 transition-all duration-200 text-white shadow-lg border-2 border-white/30"
+      >
+        <i class="fa-solid fa-times text-sm font-bold"></i>
+      </button>
+    </div>
+
+    <!-- Barra de progreso para auto-hide -->
+    <div
+      class="absolute bottom-0 left-0 h-2 bg-white/40 rounded-bl-xl animate-progress-bar shadow-lg"
+    ></div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

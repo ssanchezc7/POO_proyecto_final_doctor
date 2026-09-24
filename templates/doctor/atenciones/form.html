@@ -1,0 +1,3644 @@
+{% extends 'base.html' %} {% block title %} {% if object %} Editar Atención
+Médica {% else %} Nueva Atención Médica {% endif %} - SaludTotal {% endblock %}
+{% load static %} {% block css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  /* Estilos para el sistema de grabación por voz */
+  .voice-recording-button {
+    transition: all 0.3s ease;
+  }
+
+  .voice-recording-button:hover {
+    transform: scale(1.05);
+  }
+
+  .voice-recording-button.recording {
+    animation: pulse-red 1.5s infinite;
+  }
+
+  @keyframes pulse-red {
+    0%,
+    100% {
+      background-color: rgb(254, 226, 226);
+      transform: scale(1);
+    }
+    50% {
+      background-color: rgb(252, 165, 165);
+      transform: scale(1.05);
+    }
+  }
+
+  .voice-status-indicator {
+    animation: slide-up 0.3s ease-out;
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Animación del indicador de grabación */
+  .recording-pulse {
+    animation: recording-pulse 1s infinite;
+  }
+
+  @keyframes recording-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+</style>
+{% endblock css %} {% block content %}
+<!-- Contenedor principal con altura controlada -->
+<div class="min-h-screen bg-gray-50 withe:bg-gray-900">
+  <div class="w-full px-6 py-8">
+    <!-- Header -->
+    <div
+      class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-6 sm:p-8 rounded-lg shadow-lg mb-8"
+    >
+      <div
+        class="flex flex-col sm:flex-row items-start sm:items-center justify-between"
+      >
+        <div class="flex-1">
+          <h1 class="text-2xl sm:text-3xl font-bold">
+            <i
+              class="fas fa-{% if object %}edit{% else %}plus{% endif %} mr-2"
+            ></i>
+            {% if object %} Editar Atención Médica {% else %} Nueva Atención
+            Médica {% endif %}
+          </h1>
+          <p class="text-emerald-100 mt-1 text-sm sm:text-base">
+            {% if object %} Modifica la información de la atención médica {%
+            else %} Registra una nueva atención médica en el sistema {% endif %}
+          </p>
+        </div>
+        <div class="text-right mt-4 sm:mt-0">
+          <div class="text-xl sm:text-2xl font-bold">
+            <i class="fas fa-stethoscope"></i>
+          </div>
+          <div class="text-xs sm:text-sm text-emerald-100">Atención Médica</div>
+        </div>
+      </div>
+    </div>
+    <!-- Navigation Tabs -->
+    <div
+      class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden mb-8"
+    >
+      <div class="border-b border-gray-200 dark:border-gray-700">
+        <nav class="flex space-x-0">
+          <button
+            onclick="showTab('paciente')"
+            id="tab-paciente"
+            class="tab-button flex-1 py-4 px-6 text-center border-b-3 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-semibold transition-all duration-300 hover:bg-emerald-50 dark:hover:bg-gray-700"
+          >
+            <div class="flex items-center justify-center space-x-2">
+              <i class="fas fa-user-injured text-lg"></i>
+              <span>Datos del Paciente</span>
+            </div>
+          </button>
+          <button
+            onclick="showTab('consultas')"
+            id="tab-consultas"
+            class="tab-button flex-1 py-4 px-6 text-center border-b-3 border-transparent text-gray-500 dark:text-gray-400 font-semibold transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            <div class="flex items-center justify-center space-x-2">
+              <i class="fas fa-history text-lg"></i>
+              <span>Consultas Anteriores</span>
+            </div>
+          </button>
+          <button
+            onclick="showTab('atencion')"
+            id="tab-atencion"
+            class="tab-button flex-1 py-4 px-6 text-center border-b-3 border-transparent text-gray-500 dark:text-gray-400 font-semibold transition-all duration-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            <div class="flex items-center justify-center space-x-2">
+              <i class="fas fa-clipboard-list text-lg"></i>
+              <span>Atención Actual</span>
+            </div>
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="space-y-8">
+      <!-- Datos del Paciente -->
+      <div id="content-paciente" class="tab-content active">
+        <!-- Selector de Paciente -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
+          <h2
+            class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center"
+          >
+            <div
+              class="w-10 h-10 bg-emerald-100 dark:bg-emerald-900 rounded-xl flex items-center justify-center mr-4"
+            >
+              <i
+                class="fas fa-search text-emerald-600 dark:text-emerald-400"
+              ></i>
+            </div>
+            Selección de Paciente
+          </h2>
+
+          <div class="flex flex-col md:flex-row gap-4 items-end">
+            <div class="flex-1 relative">
+              <label class="block text-sm font-semibold text-gray-700 mb-2"
+                >Buscar y Seleccionar Paciente</label
+              >
+
+              <!-- Input de búsqueda personalizado -->
+              <div class="relative">
+                <input
+                  type="text"
+                  id="paciente-search-input"
+                  placeholder="Escriba el nombre, apellido o cédula del paciente..."
+                  class="w-full p-4 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 bg-white"
+                  autocomplete="off"
+                />
+
+                <!-- Indicador de carga -->
+                <div
+                  id="loading-indicator"
+                  class="absolute right-4 top-1/2 transform -translate-y-1/2 hidden"
+                >
+                  <svg
+                    class="w-5 h-5 text-blue-500 loading-spinner"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                      class="opacity-25"
+                    ></circle>
+                    <path
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      class="opacity-75"
+                    ></path>
+                  </svg>
+                </div>
+
+                <!-- Icono de búsqueda -->
+                <div
+                  id="search-icon"
+                  class="absolute right-4 top-1/2 transform -translate-y-1/2"
+                >
+                  <svg
+                    class="w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    ></path>
+                  </svg>
+                </div>
+
+                <!-- Botón de limpiar -->
+                <button
+                  id="clear-button"
+                  class="absolute right-4 top-1/2 transform -translate-y-1/2 hidden hover:bg-gray-100 rounded-full p-1"
+                  onclick="limpiarSeleccion()"
+                >
+                  <svg
+                    class="w-4 h-4 text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Dropdown de resultados -->
+              <div
+                id="pacientes-dropdown"
+                class="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto dropdown-closed transition-all duration-200"
+              >
+                <div id="pacientes-list" class="py-2">
+                  <!-- Los resultados se cargarán aquí -->
+                </div>
+
+                <!-- Mensaje cuando no hay resultados -->
+                <div
+                  id="no-results"
+                  class="p-4 text-center text-gray-500 hidden"
+                >
+                  <svg
+                    class="w-8 h-8 mx-auto mb-2 text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    ></path>
+                  </svg>
+                  No se encontraron pacientes
+                </div>
+
+                <!-- Mensaje de mínimo de caracteres -->
+                <div
+                  id="min-chars-message"
+                  class="p-4 text-center text-gray-500 hidden"
+                >
+                  <svg
+                    class="w-8 h-8 mx-auto mb-2 text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    ></path>
+                  </svg>
+                  Escriba al menos 3 caracteres para buscar
+                </div>
+              </div>
+            </div>
+
+            <button
+              onclick="mostrarFormularioNuevoPaciente()"
+              class="bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-xl transition-colors duration-200 flex items-center space-x-2 font-semibold"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                ></path>
+              </svg>
+              <span>Agregar Paciente</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Datos del Paciente Seleccionado -->
+        <div
+          id="datos-paciente-container"
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8 hidden"
+        >
+          <h3
+            class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center"
+          >
+            <div
+              class="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mr-3"
+            >
+              <i
+                class="fas fa-user-check text-green-600 dark:text-green-400"
+              ></i>
+            </div>
+            Datos del Paciente
+          </h3>
+
+          <!-- Información Personal -->
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
+          >
+            <div class="flex items-center space-x-4">
+              <div
+                id="paciente-avatar"
+                class="w-12 h-12 rounded-full overflow-hidden"
+              >
+                <img
+                  id="paciente-foto"
+                  src=""
+                  alt="Foto del paciente"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <div
+                  id="paciente-nombre"
+                  class="font-semibold text-gray-800 dark:text-white"
+                >
+                  Nombre del Paciente
+                </div>
+                <div
+                  id="paciente-cedula"
+                  class="text-sm text-gray-500 dark:text-gray-400"
+                >
+                  CI: 0000000000
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">
+                Teléfono
+              </div>
+              <div
+                id="paciente-telefono"
+                class="font-medium text-gray-800 dark:text-white"
+              >
+                --
+              </div>
+            </div>
+
+            <div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Email</div>
+              <div
+                id="paciente-email"
+                class="font-medium text-gray-800 dark:text-white"
+              >
+                --
+              </div>
+            </div>
+
+            <div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">Edad</div>
+              <div
+                id="paciente-edad"
+                class="font-medium text-gray-800 dark:text-white"
+              >
+                --
+              </div>
+            </div>
+
+            <div class="md:col-span-2">
+              <div class="text-sm text-gray-500 dark:text-gray-400">
+                Dirección
+              </div>
+              <div
+                id="paciente-direccion"
+                class="font-medium text-gray-800 dark:text-white"
+              >
+                --
+              </div>
+            </div>
+          </div>
+
+          <!-- Historia Clínica -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <label
+                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                >Antecedentes Personales</label
+              >
+              <textarea
+                id="antecedentes-personales"
+                rows="3"
+                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                readonly
+              ></textarea>
+            </div>
+
+            <div>
+              <label
+                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                >Antecedentes Quirúrgicos</label
+              >
+              <textarea
+                id="antecedentes-quirurgicos"
+                rows="3"
+                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                readonly
+              ></textarea>
+            </div>
+
+            <div>
+              <label
+                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                >Antecedentes Familiares</label
+              >
+              <textarea
+                id="antecedentes-familiares"
+                rows="3"
+                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                readonly
+              ></textarea>
+            </div>
+
+            <div>
+              <label
+                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                >Alergias</label
+              >
+              <textarea
+                id="alergias"
+                rows="3"
+                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                readonly
+              ></textarea>
+            </div>
+
+            <div>
+              <label
+                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                >Medicamentos Actuales</label
+              >
+              <textarea
+                id="medicamentos-actuales"
+                rows="3"
+                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                readonly
+              ></textarea>
+            </div>
+
+            <div>
+              <label
+                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                >Hábitos Tóxicos</label
+              >
+              <textarea
+                id="habitos-toxicos"
+                rows="3"
+                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                readonly
+              ></textarea>
+            </div>
+
+            <div>
+              <label
+                class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                >Vacunas</label
+              >
+              <textarea
+                id="vacunas"
+                rows="3"
+                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                readonly
+              ></textarea>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2"
+                >Antecedentes Gineco-obstétricos</label
+              >
+              <textarea
+                id="antecedentes-gineco"
+                rows="3"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                readonly
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensaje cuando no hay paciente seleccionado -->
+        <div
+          id="no-paciente-mensaje"
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 text-center"
+        >
+          <div
+            class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
+            <i class="fas fa-user-injured text-4xl text-gray-400"></i>
+          </div>
+          <h3
+            class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2"
+          >
+            Seleccione un paciente
+          </h3>
+          <p class="text-gray-500 dark:text-gray-400">
+            Para continuar, busque y seleccione un paciente de la lista o
+            agregue uno nuevo.
+          </p>
+        </div>
+
+        <!-- Modal Agregar Paciente si no existe -->
+        {% include "components/modal_paciente.html" %}
+      </div>
+      <!-- Consultas Anteriores -->
+      <div id="content-consultas" class="tab-content">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
+          <div class="mb-8">
+            <h2
+              class="text-2xl font-bold text-gray-800 dark:text-white mb-2 flex items-center"
+            >
+              <div
+                class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-history text-blue-600 dark:text-blue-400"></i>
+              </div>
+              Historial de Consultas
+            </h2>
+            <p class="text-gray-600 dark:text-gray-400">
+              Registro completo de atenciones médicas anteriores
+            </p>
+          </div>
+
+          <div id="consultas-container" class="space-y-6">
+            <!-- Las consultas se cargarán aquí dinámicamente -->
+
+            {% if object %}
+            <!-- Botón de prueba para el modal de detalle (solo en modo edición) -->
+            <div
+              class="bg-yellow-50 dark:bg-yellow-900 dark:bg-opacity-20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-700"
+            >
+              <h4
+                class="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-2"
+              >
+                <i class="fas fa-flask mr-2"></i>
+                Prueba del Modal de Detalle
+              </h4>
+              <p class="text-sm text-yellow-700 dark:text-yellow-400 mb-3">
+                Haga clic en el botón de abajo para probar el modal de detalle
+                de esta atención médica.
+              </p>
+              <button
+                type="button"
+                onclick="openDetailModal({{ object.id }})"
+                class="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors duration-200 text-sm font-medium"
+              >
+                <i class="fas fa-eye mr-2"></i>
+                Probar Modal de Detalle
+              </button>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Mensaje cuando no hay consultas -->
+          <div id="no-consultas-mensaje" class="text-center py-12 hidden">
+            <div
+              class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4"
+            >
+              <i class="fas fa-clipboard-list text-4xl text-gray-400"></i>
+            </div>
+            <h3
+              class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Sin consultas registradas
+            </h3>
+            <p class="text-gray-500 dark:text-gray-400">
+              Este paciente no tiene atenciones médicas registradas en el
+              sistema.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Atención Actual -->
+      <div id="content-atencion" class="tab-content">
+        <div class="space-y-8">
+          <!-- Identificación -->
+          <form
+            id="atencion-form"
+            onsubmit="event.preventDefault(); grabarAtencion();"
+          >
+            {% csrf_token %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+              <h2
+                class="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center"
+              >
+                <div
+                  class="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center mr-4"
+                >
+                  <i
+                    class="fas fa-clipboard-list text-purple-600 dark:text-purple-400"
+                  ></i>
+                </div>
+                Identificación de la Atención
+              </h2>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <div
+                  class="bg-blue-50 p-2 rounded-xl border-l-4 border-blue-400 md:col-span-2"
+                >
+                  <h3 class="font-semibold text-blue-800 mb-2">Paciente</h3>
+                  <p id="paciente-nombre2" class="text-blue-700 text-lg">
+                    Vera, Erick
+                  </p>
+                  <!-- Campo oculto para capturar ID del paciente -->
+                  <input id="id_paciente" />
+                </div>
+                <div
+                  class="bg-green-50 p-2 rounded-xl border-l-4 border-green-400 text-center"
+                >
+                  <div
+                    id="paciente-avatar2"
+                    class="w-24 h-24 rounded-full overflow-hidden mx-auto"
+                  >
+                    <img
+                      id="paciente-foto2"
+                      src=""
+                      alt="Foto del paciente"
+                      class="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span
+                    id="paciente-edad2"
+                    class="text-blue-800 text-1xl font-bold"
+                    >Edad</span
+                  >
+                  <!-- Campo oculto para capturar ID del doctor -->
+                  <input type="hidden" id="id_doctor" value="1" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Signos Vitales -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+              <h3
+                class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center"
+              >
+                <div
+                  class="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center mr-3"
+                >
+                  <i
+                    class="fas fa-heartbeat text-red-600 dark:text-red-400"
+                  ></i>
+                </div>
+                Signos Vitales y Mediciones
+              </h3>
+
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-red-50 p-4 rounded-xl text-center">
+                  <h4 class="font-semibold text-red-800 text-sm">
+                    Presión Arterial
+                  </h4>
+                  <input
+                    type="text"
+                    id="id_presion_arterial"
+                    value="{{ atencion.presion_arterial|default:'' }}"
+                    class="w-full mt-2 p-2 border border-red-200 rounded-lg text-center font-bold text-red-700"
+                    placeholder="120/80"
+                  />
+                </div>
+                <div class="bg-pink-50 p-4 rounded-xl text-center">
+                  <h4 class="font-semibold text-pink-800 text-sm">
+                    Pulso (ppm)
+                  </h4>
+                  <input
+                    type="number"
+                    id="id_pulso"
+                    value="{{ atencion.pulso|default:'' }}"
+                    class="w-full mt-2 p-2 border border-pink-200 rounded-lg text-center font-bold text-pink-700"
+                    placeholder="72"
+                  />
+                </div>
+                <div class="bg-orange-50 p-4 rounded-xl text-center">
+                  <h4 class="font-semibold text-orange-800 text-sm">
+                    Temperatura (°C)
+                  </h4>
+                  <input
+                    type="number"
+                    step="0.1"
+                    id="id_temperatura"
+                    value="{{ atencion.temperatura|stringformat:'g'|default:'' }}"
+                    class="w-full mt-2 p-2 border border-orange-200 rounded-lg text-center font-bold text-orange-700"
+                    placeholder="36.5"
+                  />
+                </div>
+                <div class="bg-blue-50 p-4 rounded-xl text-center">
+                  <h4 class="font-semibold text-blue-800 text-sm">
+                    Freq. Respiratoria
+                  </h4>
+                  <input
+                    type="number"
+                    id="id_frecuencia_respiratoria"
+                    value="{{ atencion.frecuencia_respiratoria|stringformat:'g'|default:'' }}"
+                    class="w-full mt-2 p-2 border border-blue-200 rounded-lg text-center font-bold text-blue-700"
+                    placeholder="16"
+                  />
+                </div>
+                <div class="bg-green-50 p-4 rounded-xl text-center">
+                  <h4 class="font-semibold text-green-800 text-sm">
+                    Saturación O2 (%)
+                  </h4>
+                  <input
+                    type="number"
+                    id="id_saturacion_oxigeno"
+                    value="{{ atencion.saturacion_oxigeno|stringformat:'g'|default:'' }}"
+                    class="w-full mt-2 p-2 border border-green-200 rounded-lg text-center font-bold text-green-700"
+                    placeholder="98"
+                  />
+                </div>
+                <div class="bg-purple-50 p-4 rounded-xl text-center">
+                  <h4 class="font-semibold text-purple-800 text-sm">
+                    Peso (kg)
+                  </h4>
+                  <input
+                    type="number"
+                    step="0.1"
+                    id="id_peso"
+                    value="{{ atencion.peso|stringformat:'g'|default:'' }}"
+                    class="w-full mt-2 p-2 border border-purple-200 rounded-lg text-center font-bold text-purple-700"
+                    placeholder="70.5"
+                  />
+                </div>
+                <div class="bg-indigo-50 p-4 rounded-xl text-center">
+                  <h4 class="font-semibold text-indigo-800 text-sm">
+                    Altura (m)
+                  </h4>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="id_altura"
+                    value="{{ atencion.altura|stringformat:'g' }}"
+                    class="w-full mt-2 p-2 border border-indigo-200 rounded-lg text-center font-bold text-indigo-700"
+                    placeholder="1.75"
+                  />
+                </div>
+                <div class="bg-teal-50 p-4 rounded-xl text-center">
+                  <h4 class="font-semibold text-teal-800 text-sm mb-3">
+                    Consulta Control
+                  </h4>
+                  <div class="flex items-center justify-center">
+                    <label class="flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        id="id_consulta_control"
+                        {%
+                        if
+                        atencion.es_control
+                        %}checked{%
+                        endif
+                        %}
+                        class="sr-only"
+                      />
+                      <div class="relative">
+                        <div
+                          class="w-10 h-6 bg-teal-200 rounded-full shadow-inner transition-colors duration-200 ease-in-out"
+                        ></div>
+                        <div
+                          class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-200 ease-in-out"
+                        ></div>
+                      </div>
+                      <span class="ml-3 text-sm font-medium text-teal-700"
+                        >¿Es consulta de control?</span
+                      >
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Evaluación Clínica -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+              <h3
+                class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center"
+              >
+                <div
+                  class="w-8 h-8 bg-emerald-100 dark:bg-emerald-900 rounded-lg flex items-center justify-center mr-3"
+                >
+                  <i
+                    class="fas fa-user-md text-emerald-600 dark:text-emerald-400"
+                  ></i>
+                </div>
+                Evaluación Clínica
+              </h3>
+
+              <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label
+                      class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                    >
+                      Motivo de Consulta *
+                    </label>
+                    <textarea
+                      id="id_motivo_consulta"
+                      class="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
+                      rows="3"
+                      placeholder="Ingrese el motivo de la consulta..."
+                    >
+{{ atencion.motivo_consulta|default:'' }}</textarea
+                    >
+                  </div>
+                  <div>
+                    <label
+                      class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                    >
+                      Síntomas *
+                    </label>
+                    <textarea
+                      id="id_sintomas"
+                      class="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
+                      rows="3"
+                      placeholder="Describa los síntomas presentados..."
+                    >
+{{ atencion.sintomas|default:'' }}</textarea
+                    >
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Examen Físico
+                  </label>
+                  <textarea
+                    id="id_examen_fisico"
+                    class="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-gray-700 dark:text-white"
+                    rows="4"
+                    placeholder="Hallazgos del examen físico..."
+                  >
+{{ atencion.examen_fisico|default:'' }}</textarea
+                  >
+                </div>
+
+                <!-- Diagnósticos -->
+                <div
+                  class="bg-purple-50 dark:bg-purple-900 border border-purple-200 dark:border-purple-700 rounded-lg p-4"
+                >
+                  <label
+                    class="block text-sm font-semibold text-purple-800 dark:text-purple-300 mb-3 flex items-center"
+                  >
+                    <i class="fas fa-diagnoses mr-2"></i>
+                    Diagnóstico(s) *
+                  </label>
+                  <div
+                    class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-600"
+                  >
+                    <div class="flex items-center space-x-3 mb-3">
+                      <select
+                        id="id_diagnostico"
+                        multiple
+                        class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg h-32 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        size="5"
+                      >
+                        {% for diagnostico in diagnosticos %}
+                        <option
+                          value="{{ diagnostico.id }}"
+                          {%
+                          if
+                          atencion
+                          and
+                          diagnostico
+                          in
+                          atencion.diagnostico.all
+                          %}selected{%
+                          endif
+                          %}
+                          title="{{ diagnostico.datos_adicionales|default:'' }}"
+                        >
+                          {{ diagnostico.codigo }} - {{ diagnostico.descripcion}}
+                        </option>
+                        {% empty %}
+                        <option value="" disabled>
+                          No hay diagnósticos disponibles
+                        </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div
+                      id="diagnosticos-lista"
+                      class="text-sm text-gray-600 dark:text-gray-400"
+                    >
+                      <!-- Aquí aparecerán los diagnósticos seleccionados -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Plan Terapéutico -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+              <h3
+                class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center"
+              >
+                <div
+                  class="w-8 h-8 bg-cyan-100 dark:bg-cyan-900 rounded-lg flex items-center justify-center mr-3"
+                >
+                  <i
+                    class="fas fa-notes-medical text-cyan-600 dark:text-cyan-400"
+                  ></i>
+                </div>
+                Plan Terapéutico
+              </h3>
+
+              <div class="space-y-6">
+                <div>
+                  <label
+                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Plan de Tratamiento *
+                  </label>
+                  <textarea
+                    id="id_tratamiento"
+                    class="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white"
+                    rows="4"
+                    placeholder="Detalle el plan de tratamiento..."
+                  >
+{{ atencion.tratamiento|default:'' }}</textarea
+                  >
+                </div>
+
+                <div>
+                  <label
+                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Exámenes Solicitados
+                  </label>
+                  <textarea
+                    id="id_examenes_enviados"
+                    class="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white"
+                    rows="3"
+                    placeholder="Lista de exámenes solicitados..."
+                  >
+{{ atencion.examenes_enviados|default:'' }}</textarea
+                  >
+                </div>
+
+                <div>
+                  <label
+                    class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Comentario Adicional
+                    <span class="text-xs text-gray-500 ml-2"
+                      >💬 Puedes usar grabación por voz</span
+                    >
+                  </label>
+                  <div class="relative">
+                    <textarea
+                      id="id_comentario_adicional"
+                      class="w-full p-4 pr-24 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white"
+                      rows="3"
+                      placeholder="Comentarios adicionales... (puedes escribir o usar el micrófono)"
+                    >
+{{ atencion.comentario_adicional|default:'' }}</textarea
+                    >
+
+                    <!-- Controles de voz -->
+                    <div class="absolute right-2 top-2 flex space-x-1">
+                      <!-- Botón de limpiar campo -->
+                      <button
+                        type="button"
+                        class="p-2 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-400 hover:text-gray-600"
+                        title="Limpiar campo"
+                        onclick="clearVoiceField('id_comentario_adicional')"
+                      >
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          ></path>
+                        </svg>
+                      </button>
+
+                      <!-- Botón de grabación por voz -->
+                      <button
+                        type="button"
+                        id="btn-voice-comentario_adicional"
+                        class="p-2 rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                        title="Grabar por voz"
+                        onclick="toggleVoiceRecording('id_comentario_adicional')"
+                      >
+                        <svg
+                          id="mic-icon-comentario_adicional"
+                          class="w-5 h-5 text-gray-500 dark:text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                          ></path>
+                        </svg>
+
+                        <!-- Icono de grabación activa (oculto por defecto) -->
+                        <svg
+                          id="recording-icon-comentario_adicional"
+                          class="w-5 h-5 text-red-500 hidden"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle cx="12" cy="12" r="3"></circle>
+                          <path
+                            d="M12 1v6m0 10v6m11-7h-6m-10 0H1m15.5-6.5l-4.24 4.24M7.76 7.76L3.52 3.52m12.96 12.96l-4.24-4.24M7.76 16.24l-4.24 4.24"
+                          ></path>
+                        </svg>
+                      </button>
+                    </div>
+
+                    <!-- Indicador de estado de grabación -->
+                    <div
+                      id="voice-status-comentario_adicional"
+                      class="hidden absolute -bottom-6 left-0 text-xs text-gray-500 dark:text-gray-400"
+                    >
+                      <span class="flex items-center">
+                        <div
+                          class="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"
+                        ></div>
+                        Grabando... Hable ahora
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Prescripción de Medicamentos -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+              <h3
+                class="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center"
+              >
+                <div
+                  class="w-8 h-8 bg-rose-100 dark:bg-rose-900 rounded-lg flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-pills text-rose-600 dark:text-rose-400"></i>
+                </div>
+                Prescripción de Medicamentos
+              </h3>
+
+              <!-- Formulario de agregar medicamento -->
+              <div
+                class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg mb-6 border border-gray-200 dark:border-gray-600"
+              >
+                <h4
+                  class="font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center"
+                >
+                  <i class="fas fa-plus-circle mr-2 text-rose-600"></i>
+                  Agregar Medicamento
+                </h4>
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4"
+                >
+                  <!-- select dinámico -->
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Medicamento *
+                    </label>
+                    <select
+                      id="medicamento-select"
+                      class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 dark:bg-gray-800 dark:text-white"
+                      name="medicamento_id"
+                      required
+                    >
+                      <option value="">Seleccione medicamento...</option>
+                      {% for medicamento in medicamentos %}
+                      <option
+                        value="{{ medicamento.id }}"
+                        title="{{ medicamento.nombre }} {{ medicamento.concentracion }} - {{ medicamento.tipo.nombre }} ({{ medicamento.marca_medicamento.nombre }}) - ${{ medicamento.precio }} - Stock: {{ medicamento.cantidad }}"
+                      >
+                        {{ medicamento.nombre }}
+                      </option>
+                      {% empty %}
+                      <option value="" disabled>
+                        No hay medicamentos disponibles
+                      </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <!-- fin select -->
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Cantidad *
+                    </label>
+                    <input
+                      type="number"
+                      id="cantidad-input"
+                      class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 dark:bg-gray-800 dark:text-white"
+                      placeholder="30"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Prescripción *
+                    </label>
+                    <input
+                      type="text"
+                      id="prescripcion-input"
+                      class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 dark:bg-gray-800 dark:text-white"
+                      placeholder="1 cada 8 horas"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Duración (días) *
+                    </label>
+                    <input
+                      type="number"
+                      id="duracion-input"
+                      class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 dark:bg-gray-800 dark:text-white"
+                      placeholder="7"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Frecuencia diaria *
+                    </label>
+                    <input
+                      type="number"
+                      id="frecuencia-input"
+                      class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 dark:bg-gray-800 dark:text-white"
+                      placeholder="3"
+                    />
+                  </div>
+                </div>
+                <div class="mt-4 flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onclick="agregarMedicamento()"
+                    class="inline-flex items-center px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-colors duration-200 font-medium"
+                  >
+                    <i class="fas fa-plus mr-2"></i>
+                    Agregar Prescripción
+                  </button>
+                  <button
+                    type="button"
+                    onclick="verDatos()"
+                    class="inline-flex items-center px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 font-medium"
+                  >
+                    <i class="fas fa-flask mr-2"></i>
+                    Crear Medicamentos
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tabla de medicamentos -->
+              <div
+                class="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600"
+              >
+                <table
+                  class="w-full divide-y divide-gray-200 dark:divide-gray-700"
+                >
+                  <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th
+                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                      >
+                        Medicamento
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                      >
+                        Cantidad
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                      >
+                        Prescripción
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                      >
+                        Duración (días)
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                      >
+                        Frecuencia
+                      </th>
+                      <th
+                        class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20"
+                      >
+                        Acción
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    id="medicamentos-table"
+                    class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                  >
+                    <!-- Los medicamentos se agregarán aquí dinámicamente -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div
+              class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mt-8"
+            >
+              <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button
+                  type="submit"
+                  class="inline-flex items-center px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 shadow-sm font-medium"
+                >
+                  <i class="fas fa-save mr-2"></i>
+                  {% if object %} Actualizar Atención Médica {% else %} Guardar
+                  Atención Médica {% endif %}
+                </button>
+
+                {% if object %}
+                <!-- Botón para ver detalle de atención (solo en modo edición) -->
+                <button
+                  type="button"
+                  onclick="openDetailModal({{ object.id }})"
+                  class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm font-medium"
+                >
+                  <i class="fas fa-eye mr-2"></i>
+                  Ver Detalle
+                </button>
+                {% endif %}
+
+                <a
+                  href="{% url 'doctor:atencion_list' %}"
+                  class="inline-flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-sm font-medium"
+                >
+                  <i class="fas fa-times mr-2"></i>
+                  Cancelar
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- CSS para estilos de error y variables médicas -->
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+  main {
+    font-family: "Inter", sans-serif;
+  }
+  .tab-content {
+    display: none;
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  .tab-content.active {
+    display: block;
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .card-hover:hover {
+    transform: translateY(-4px);
+  }
+  .gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  .medical-gradient {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  }
+  .glass-effect {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.9);
+  }
+  .card-hover:hover {
+    transform: translateY(-4px);
+  }
+  /* Estilos adicionales para el modal de paciente */
+
+  /* Animación de entrada del modal */
+  #modal-agregar-paciente {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  #modal-agregar-paciente .inline-block {
+    animation: slideInDown 0.3s ease-out;
+  }
+
+  @keyframes slideInDown {
+    from {
+      opacity: 0;
+      transform: translate3d(0, -100%, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translateZ(0);
+    }
+  }
+
+  /* Estilos para el scroll del modal */
+  #modal-agregar-paciente {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Altura máxima para dispositivos móviles */
+  @media (max-height: 600px) {
+    #modal-agregar-paciente .inline-block {
+      margin: 1rem 0;
+    }
+  }
+
+  /* Estilos para inputs focus mejorados */
+  .focus\:ring-2:focus {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+
+  .focus\:ring-green-500:focus {
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.5);
+  }
+
+  /* Transición suave para acordeón */
+  #content-datos-personales,
+  #content-historia-clinica {
+    transition: all 0.3s ease-in-out;
+  }
+
+  /* Estilos para validación de campos */
+  .campo-error {
+    border-color: #ef4444 !important;
+    background-color: #fef2f2 !important;
+  }
+
+  .campo-error:focus {
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5) !important;
+  }
+
+  /* Estilos para campos obligatorios */
+  input[required]:invalid {
+    border-color: #fbbf24;
+  }
+
+  input[required]:valid {
+    border-color: #10b981;
+  }
+
+  /* Hover effect mejorado para botones del acordeón */
+  .hover\:bg-blue-100:hover {
+    background-color: #dbeafe;
+  }
+
+  .hover\:bg-green-100:hover {
+    background-color: #dcfce7;
+  }
+
+  /* Estilos responsivos para el modal */
+  @media (max-width: 768px) {
+    #modal-agregar-paciente .inline-block {
+      margin: 0.5rem;
+      width: calc(100% - 1rem);
+    }
+
+    #modal-agregar-paciente .grid-cols-2 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Indicador visual para campos obligatorios */
+  label:has(+ input[required])::after,
+  label:has(+ select[required])::after {
+    content: " *";
+    color: #ef4444;
+  }
+
+  /* Estilos para el upload de archivos */
+  input[type="file"] {
+    padding: 0.5rem !important;
+  }
+
+  input[type="file"]::-webkit-file-upload-button {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    margin-right: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  input[type="file"]::-webkit-file-upload-button:hover {
+    background: #e5e7eb;
+  }
+
+  /* Estilos para textarea resize */
+  textarea {
+    resize: vertical;
+    min-height: 2.5rem;
+  }
+
+  /* Animación de rotación para iconos del acordeón */
+  .transform.rotate-180 {
+    transform: rotate(180deg);
+  }
+
+  .transition-transform {
+    transition: transform 0.2s ease-in-out;
+  }
+
+  /* Backdrop blur para el modal */
+  #modal-agregar-paciente > .flex > .fixed {
+    backdrop-filter: blur(4px);
+  }
+
+  /* Scroll personalizado para el modal */
+  #modal-agregar-paciente::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  #modal-agregar-paciente::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  #modal-agregar-paciente::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 4px;
+  }
+
+  #modal-agregar-paciente::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.7);
+  }
+  /* Estilos para el checkbox toggle */
+  input[type="checkbox"]:checked + div .bg-teal-200 {
+    background-color: #14b8a6; /* teal-500 */
+  }
+
+  input[type="checkbox"]:checked + div .transform {
+    transform: translateX(1rem); /* Mueve el círculo a la derecha */
+  }
+
+  input[type="checkbox"]:focus + div {
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.3);
+    border-radius: 9999px;
+  }
+
+  /* Hover effect */
+  label:hover .bg-teal-200 {
+    background-color: #99f6e4; /* teal-300 */
+  }
+
+  input[type="checkbox"]:checked + div:hover .bg-teal-200 {
+    background-color: #0d9488; /* teal-600 */
+  }
+  /* estilos del select busqueda de paciente*/
+  .dropdown-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .dropdown-closed {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+  }
+
+  .option-hover:hover {
+    background-color: #dbeafe;
+  }
+
+  .option-selected {
+    background-color: #3b82f6;
+    color: white;
+  }
+
+  .loading-spinner {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .card-hover:hover {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    transform: translateY(-2px);
+  }
+
+  /* Estilos para el modal de detalle de atención */
+  #modal-detalle-atencion {
+    backdrop-filter: blur(4px);
+  }
+
+  #modal-detalle-atencion .bg-white {
+    transition: all 0.3s ease-in-out;
+  }
+
+  /* Animación de entrada del modal de detalle */
+  #modal-detalle-atencion:not(.hidden) {
+    animation: modalFadeIn 0.3s ease-out forwards;
+  }
+
+  #modal-detalle-atencion:not(.hidden) > div {
+    animation: modalSlideIn 0.3s ease-out forwards;
+  }
+
+  @keyframes modalFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Efectos hover para elementos dentro del modal */
+  #modal-detalle-atencion .rounded-lg:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Scroll personalizado para el contenido del modal */
+  #modal-detalle-atencion .overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  #modal-detalle-atencion .overflow-y-auto::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+  }
+
+  #modal-detalle-atencion .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+  }
+
+  #modal-detalle-atencion .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  /* Estilos responsivos para el modal de detalle */
+  @media (max-width: 768px) {
+    #modal-detalle-atencion .max-w-4xl {
+      max-width: 95vw;
+      margin: 0.5rem;
+    }
+
+    #modal-detalle-atencion .grid-cols-2 {
+      grid-template-columns: 1fr;
+    }
+
+    #modal-detalle-atencion .md\:grid-cols-4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>
+
+<script>
+   // Recibir el contexto del paciente desde Django
+   const pacienteDesdeServidor = {{ paciente_json|safe }};
+   const medicamentosDesdeServidor = {{ medicamentos_json|safe }};
+   const modoEdicion = {{ modo_edicion|yesno:"true,false" }};
+
+  // ==============================
+  // SISTEMA DE ATENCIÓN MÉDICA - CÓDIGO ORGANIZADO
+  // ==============================
+
+  // ==============================
+  // 1. VARIABLES GLOBALES
+  // ==============================
+  let atencionMedica = null;
+  let pacienteSeleccionado = null;
+  let searchTimeout = null;
+  let isSearching = false;
+
+  // ==============================
+  // 2. GESTIÓN DE PESTAÑAS/TABS
+  // ==============================
+
+  /**
+   * Función para cambiar de pestaña o tabs
+   * @param {string} tabName - Nombre de la pestaña a mostrar
+   */
+  function showTab(tabName) {
+      // Ocultar todas las pestañas
+      const allTabs = document.querySelectorAll('.tab-content');
+      allTabs.forEach(tab => {
+          tab.classList.remove('active');
+      });
+
+      // Mostrar la pestaña seleccionada
+      const selectedTab = document.getElementById('content-' + tabName);
+      if (selectedTab) {
+          selectedTab.classList.add('active');
+      }
+
+      // Actualizar estilos de los botones
+      const allButtons = document.querySelectorAll('.tab-button');
+      allButtons.forEach(button => {
+          // Remover clases activas
+          button.classList.remove('border-emerald-500', 'text-emerald-600', 'dark:text-emerald-400');
+          // Agregar clases inactivas
+          button.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+      });
+
+      // Activar el botón seleccionado
+      const selectedButton = document.getElementById('tab-' + tabName);
+      if (selectedButton) {
+          // Remover clases inactivas
+          selectedButton.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+          // Agregar clases activas
+          selectedButton.classList.add('border-emerald-500', 'text-emerald-600', 'dark:text-emerald-400');
+      }
+  }
+
+  // ==============================
+  // 3. CLASE PRINCIPAL - GESTOR DE ATENCIÓN MÉDICA
+  // ==============================
+
+  /**
+   * Clase principal para procesar la atención médica con sus medicamentos
+   */
+  class GestorAtencionMedica {
+      constructor() {
+          console.log('🔧 Construyendo GestorAtencionMedica...');
+
+          // Inicializar arrays para medicamentos
+          this.medicamentos = [];
+
+          // Propiedades para capturar datos del formulario
+          this.paciente = '';
+          this.presionArterial = '';
+          this.pulso = '';
+          this.temperatura = '';
+          this.frecuenciaRespiratoria = '';
+          this.saturacionOxigeno = '';
+          this.peso = '';
+          this.altura = '';
+          this.consultaControl = false;
+          this.motivoConsulta = '';
+          this.sintomas = '';
+          this.examenFisico = '';
+          this.diagnostico = [];
+          this.tratamiento = '';
+          this.examenesEnviados = '';
+          this.comentarioAdicional = '';
+          setTimeout(() => {
+              this.inicializarDiagnosticos();
+          }, 100);
+          // 🆕 CARGAR MEDICAMENTOS SI ESTÁ EN MODO EDICIÓN
+          if (modoEdicion && medicamentosDesdeServidor.length > 0) {
+              console.log('💊 Modo edición detectado - Cargando medicamentos existentes...');
+              this.cargarMedicamentosExistentes(medicamentosDesdeServidor);
+          }
+
+      }
+
+     /**
+       * Carga los medicamentos existentes directamente en la lista y actualiza la tabla
+       * Se ejecuta solo en modo edición
+       */
+      cargarMedicamentosExistentes(medicamentos) {
+          console.log('📋 Cargando', medicamentos.length, 'medicamentos en la lista...');
+
+          // Recorrer cada medicamento del servidor
+          medicamentos.forEach((medicamentoData, index) => {
+              console.log(`💊 Procesando medicamento ${index + 1}:`, medicamentoData);
+
+              // Crear objeto medicamento con la misma estructura que usa agregarMedicamento()
+              const medicamentoParaLista = {
+                  id: medicamentoData.id,
+                  medicamento: medicamentoData.nombre,
+                  cantidad: medicamentoData.cantidad,
+                  prescripcion: medicamentoData.prescripcion,
+                  duracion: medicamentoData.duracion,
+                  frecuencia: medicamentoData.frecuencia
+              };
+
+              // Agregar directamente al array medicamentos
+              this.medicamentos.push(medicamentoParaLista);
+
+              console.log(`✅ Medicamento ${index + 1} agregado a la lista:`, medicamentoParaLista);
+          });
+
+          // Actualizar la tabla HTML una sola vez al final
+          // Usar setTimeout para asegurar que el DOM esté listo
+          setTimeout(() => {
+              this.actualizarTablaMedicamentos();
+              console.log('🎉 Tabla actualizada! Total medicamentos:', this.medicamentos.length);
+          }, 200);
+      }
+
+      /**
+       * Método seguro para obtener elemento por ID
+       * @param {string} id - ID del elemento
+       * @returns {Element|null} - Elemento encontrado o null
+       */
+      obtenerElementoSeguro(id) {
+          const elemento = document.getElementById(id);
+          if (!elemento) {
+              console.warn(`⚠️ Elemento no encontrado: ${id}`);
+          }
+          return elemento;
+      }
+
+      /**
+       * Método seguro para obtener valor de un elemento
+       * @param {string} id - ID del elemento
+       * @param {string} valorPorDefecto - Valor por defecto si no existe
+       * @returns {string} - Valor del elemento
+       */
+      obtenerValorSeguro(id, valorPorDefecto = '') {
+          const elemento = this.obtenerElementoSeguro(id);
+          return elemento ? elemento.value : valorPorDefecto;
+      }
+
+      /**
+       * Método seguro para verificar checkbox
+       * @param {string} id - ID del checkbox
+       * @returns {boolean} - Estado del checkbox
+       */
+      obtenerCheckboxSeguro(id) {
+          const elemento = this.obtenerElementoSeguro(id);
+          return elemento ? elemento.checked : false;
+      }
+
+      // ============================================
+      // 3.2 GESTIÓN DE MEDICAMENTOS
+      // ============================================
+
+      /**
+       * Método para agregar medicamento a la tabla
+       */
+      agregarMedicamento() {
+          console.log('💊 Agregando medicamento...');
+
+          // Obtener valores de los campos de forma segura
+          const select = document.getElementById('medicamento-select');
+          const medicamento = select.options[select.selectedIndex].text;
+          const cantidad = this.obtenerValorSeguro('cantidad-input');
+          const prescripcion = this.obtenerValorSeguro('prescripcion-input');
+          const duracion = this.obtenerValorSeguro('duracion-input');
+          const frecuencia = this.obtenerValorSeguro('frecuencia-input');
+
+          console.log('📋 Valores capturados:', {medicamento, cantidad, prescripcion, duracion, frecuencia});
+
+          // Validar que todos los campos estén llenos
+          if (!medicamento || !cantidad || !prescripcion || !duracion || !frecuencia) {
+              alert('Por favor, complete todos los campos obligatorios del medicamento.');
+              return;
+          }
+
+          // Validar que los números sean válidos
+          if (isNaN(cantidad) || isNaN(duracion) || isNaN(frecuencia)) {
+              alert('La cantidad, duración y frecuencia deben ser números válidos.');
+              return;
+          }
+
+          // Verificar si el medicamento ya existe en la lista
+          const medicamentoId = select.value;
+          const indiceExistente = this.medicamentos.findIndex(med => med.id === medicamentoId);
+
+          if (indiceExistente !== -1) {
+              console.log('🔄 Medicamento ya existe, reemplazando...', this.medicamentos[indiceExistente]);
+              // Eliminar el medicamento existente sin confirmación
+              this.medicamentos.splice(indiceExistente, 1);
+              console.log('🗑️ Medicamento anterior eliminado. Total restante:', this.medicamentos.length);
+          }
+
+          // Crear objeto medicamento
+          const nuevoMedicamento = {
+              id: medicamentoId,
+              medicamento: medicamento,
+              cantidad: parseInt(cantidad),
+              prescripcion: prescripcion,
+              duracion: parseInt(duracion),
+              frecuencia: parseInt(frecuencia)
+          };
+
+          // Agregar a la lista
+          this.medicamentos.push(nuevoMedicamento);
+
+          // Actualizar la tabla
+          this.actualizarTablaMedicamentos();
+
+          // Limpiar campos
+          this.limpiarCamposMedicamentos();
+
+          const accion = indiceExistente !== -1 ? 'actualizado' : 'agregado';
+          console.log(`✅ Medicamento ${accion}:`, nuevoMedicamento);
+          console.log('📊 Total medicamentos:', this.medicamentos.length);
+      }
+
+      /**
+       * Método para actualizar la tabla de medicamentos
+       */
+      actualizarTablaMedicamentos() {
+          console.log('🔄 Actualizando tabla de medicamentos...');
+
+          const tbody = this.obtenerElementoSeguro('medicamentos-table');
+
+          if (!tbody) {
+              console.error('❌ No se encontró la tabla con ID: medicamentos-table');
+              return;
+          }
+
+          // Limpiar tabla
+          tbody.innerHTML = '';
+
+          // Agregar cada medicamento
+          this.medicamentos.forEach((med, index) => {
+              const fila = document.createElement('tr');
+              fila.className = 'border-b border-gray-100 hover:bg-gray-50';
+
+              fila.innerHTML = `
+                  <td class="py-4 px-4 text-gray-800">${med.medicamento}</td>
+                  <td class="py-4 px-4 text-gray-600">${med.cantidad}</td>
+                  <td class="py-4 px-4 text-gray-600">${med.prescripcion}</td>
+                  <td class="py-4 px-4 text-gray-600">${med.duracion}</td>
+                  <td class="py-4 px-4 text-gray-600">${med.frecuencia}</td>
+                  <td class="py-4 px-4">
+                      <button onclick="eliminarMedicamentoSeguro(${index})"
+                              class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors duration-200">
+                          Eliminar
+                      </button>
+                  </td>
+              `;
+
+              tbody.appendChild(fila);
+          });
+
+          console.log('✅ Tabla actualizada. Total medicamentos:', this.medicamentos.length);
+      }
+
+      /**
+       * Método para limpiar campos de medicamentos
+       */
+      limpiarCamposMedicamentos() {
+          const campos = ['medicamento-select', 'cantidad-input', 'prescripcion-input', 'duracion-input', 'frecuencia-input'];
+
+          campos.forEach(id => {
+              const elemento = this.obtenerElementoSeguro(id);
+              if (elemento) {
+                  elemento.value = '';
+              }
+          });
+      }
+
+      /**
+       * Método para eliminar medicamento
+       * @param {number} index - Índice del medicamento a eliminar
+       */
+      eliminarMedicamento(index) {
+          if (confirm('¿Está seguro de que desea eliminar este medicamento?')) {
+              this.medicamentos.splice(index, 1);
+              this.actualizarTablaMedicamentos();
+              console.log('🗑️ Medicamento eliminado. Total restante:', this.medicamentos.length);
+          }
+      }
+
+      // ============================================
+      // 3.3 GESTIÓN DE DIAGNÓSTICOS
+      // ============================================
+
+      /**
+   * Método para manejar selección de diagnósticos desde select múltiple
+   */
+  agregarDiagnostico() {
+      console.log('🔄 Función agregarDiagnostico() llamada');
+
+      const diagnosticoSelect = this.obtenerElementoSeguro('id_diagnostico');
+      const diagnosticoLista = this.obtenerElementoSeguro('diagnosticos-lista');
+
+      if (!diagnosticoSelect || !diagnosticoLista) {
+          console.error('❌ No se encontraron los elementos de diagnóstico');
+          alert('Error: Elementos de diagnóstico no encontrados en la página');
+          return;
+      }
+
+      // Limpiar la lista visual actual
+      diagnosticoLista.innerHTML = '';
+
+      // Obtener todas las opciones seleccionadas
+      const opcionesSeleccionadas = Array.from(diagnosticoSelect.selectedOptions);
+
+      if (opcionesSeleccionadas.length === 0) {
+          console.log('ℹ️ No hay diagnósticos seleccionados');
+          return;
+      }
+
+      // Crear spans visuales para cada diagnóstico seleccionado
+      opcionesSeleccionadas.forEach(option => {
+          const span = document.createElement('span');
+          span.className = 'bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs mr-2 mb-2 inline-block';
+          span.textContent = option.text;
+
+          // Agregar botón de eliminar
+          const btnEliminar = document.createElement('button');
+          btnEliminar.innerHTML = '×';
+          btnEliminar.className = 'ml-1 text-red-500 hover:text-red-700';
+          btnEliminar.onclick = () => {
+              // Deseleccionar la opción del select
+              option.selected = false;
+              // Remover el span visual
+              span.remove();
+              console.log('🗑️ Diagnóstico eliminado:', option.text);
+          };
+          span.appendChild(btnEliminar);
+
+          diagnosticoLista.appendChild(span);
+      });
+
+      console.log('✅ Diagnósticos actualizados:', opcionesSeleccionadas.length);
+  }
+
+  /**
+   * Método para inicializar listeners de diagnósticos
+   */
+  inicializarDiagnosticos() {
+      const diagnosticoSelect = this.obtenerElementoSeguro('id_diagnostico');
+
+      if (diagnosticoSelect) {
+          // Agregar listener para cambios en el select múltiple
+          diagnosticoSelect.addEventListener('change', () => {
+              this.agregarDiagnostico();
+          });
+
+          console.log('✅ Listeners de diagnósticos inicializados');
+      }
+  }
+      // ============================================
+      // 3.4 GRABACIÓN Y ENVÍO DE DATOS
+      // ============================================
+
+      /**
+       * Método para capturar todos los datos del formulario
+       */
+      grabarAtencion() {
+          console.log('💾 Iniciando proceso de grabación...');
+
+          try {
+              // Capturar datos de identificación
+              this.paciente = this.obtenerValorSeguro('id_paciente', '1');
+
+              // Capturar signos vitales y mediciones
+              this.presionArterial = this.obtenerValorSeguro('id_presion_arterial');
+              this.pulso = this.obtenerValorSeguro('id_pulso');
+              this.temperatura = this.obtenerValorSeguro('id_temperatura');
+              this.frecuenciaRespiratoria = this.obtenerValorSeguro('id_frecuencia_respiratoria');
+              this.saturacionOxigeno = this.obtenerValorSeguro('id_saturacion_oxigeno');
+              this.peso = this.obtenerValorSeguro('id_peso');
+              this.altura = this.obtenerValorSeguro('id_altura');
+              this.consultaControl = this.obtenerCheckboxSeguro('id_consulta_control');
+
+              // Capturar evaluación clínica
+              this.motivoConsulta = this.obtenerValorSeguro('id_motivo_consulta');
+              this.sintomas = this.obtenerValorSeguro('id_sintomas');
+              this.examenFisico = this.obtenerValorSeguro('id_examen_fisico');
+
+              // Capturar diagnósticos seleccionados
+              this.diagnostico = [];
+              const diagnosticoElement = this.obtenerElementoSeguro("id_diagnostico");
+
+              if (diagnosticoElement?.selectedOptions?.length > 0) {
+                  // Convertir a array y mapear los valores
+                  this.diagnostico = Array.from(diagnosticoElement.selectedOptions)
+                      .map(option => {
+                          const id = parseInt(option.value);
+                          return isNaN(id) ? null : id;
+                      })
+                      .filter(id => id !== null); // Filtrar valores inválidos
+              }
+
+              // Capturar plan terapéutico
+              this.tratamiento = this.obtenerValorSeguro('id_tratamiento');
+              this.examenesEnviados = this.obtenerValorSeguro('id_examenes_enviados');
+              this.comentarioAdicional = this.obtenerValorSeguro('id_comentario_adicional');
+
+              // Validar campos obligatorios
+              const errores = this.validarCamposObligatorios();
+              if (errores.length > 0) {
+                  alert('Por favor, complete los siguientes campos obligatorios:\n' + errores.join('\n'));
+                  return;
+              }
+
+              // Preparar objeto con todos los datos
+              const datosAtencion = this.obtenerDatosCompletos();
+              console.log('📦 Datos preparados para envío:', datosAtencion);
+
+              // Enviar datos al backend
+              this.enviarDatosAlBackend(datosAtencion);
+
+              console.log('✅ Proceso de grabación iniciado');
+              window.location.href = "{% url 'doctor:atencion_list' %}"
+
+          } catch (error) {
+              console.error('❌ Error en grabarAtencion:', error);
+              alert('Error al procesar los datos: ' + error.message);
+          }
+      }
+
+      /**
+       * Método para enviar datos al backend usando fetch
+       * @param {Object} datos - Datos de la atención médica
+       */
+      async enviarDatosAlBackend(datos) {
+          try {
+              // Mostrar indicador de carga
+              this.mostrarIndicadorCarga(true);
+
+              // URL del endpoint - CAMBIAR POR TU URL REAL
+              //const url = "{% url 'doctor:atencion_create' %}"
+              let url = window.location.pathname.trim()
+
+              console.log('🚀 EJECUTANDO FETCH - Enviando datos al backend...');
+              console.log('📍 URL:', url);
+              console.log('📦 Datos a enviar:', datos);
+
+              const response = await fetch(url, {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                  },
+                  body: JSON.stringify(datos)
+              });
+
+              // Ocultar indicador de carga
+              this.mostrarIndicadorCarga(false);
+
+              if (response.ok) {
+                  const resultado = await response.json();
+                  console.log('✅ FETCH EXITOSO - Respuesta del servidor:', resultado);
+
+                  this.mostrarMensajeExito(resultado);
+                  this.limpiarFormulario();
+
+              } else {
+                  const error = await response.text();
+                  console.error('❌ FETCH ERROR - Error del servidor:', response.status, error);
+                  this.mostrarMensajeError(`Error del servidor (${response.status}): ${error}`);
+              }
+
+          } catch (error) {
+              this.mostrarIndicadorCarga(false);
+              console.error('❌ FETCH FALLÓ - Error de conexión:', error);
+
+              if (error instanceof TypeError && error.message.includes('fetch')) {
+                  console.log('🔌 Sin conexión - Ofreciendo modo offline...');
+                  this.manejarErrorConexion(datos);
+              } else {
+                  this.mostrarMensajeError('Error inesperado: ' + error.message);
+              }
+          }
+      }
+
+      // ============================================
+      // 3.5 MÉTODOS DE INTERFAZ DE USUARIO
+      // ============================================
+
+      /**
+       * Método para mostrar indicador de carga
+       * @param {boolean} mostrar - Si mostrar o no el indicador
+       */
+      mostrarIndicadorCarga(mostrar) {
+          const botonGuardar = document.querySelector('button[type="submit"]');
+
+          if (!botonGuardar) {
+              console.warn('⚠️ Botón de guardar no encontrado');
+              return;
+          }
+
+          if (mostrar) {
+              botonGuardar.disabled = true;
+              botonGuardar.innerHTML = `
+                  <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Guardando...
+              `;
+          } else {
+              botonGuardar.disabled = false;
+              botonGuardar.innerHTML = `
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  <span>Guardar Atención Médica</span>
+              `;
+          }
+      }
+
+      /**
+       * Método para mostrar mensaje de éxito
+       * @param {Object} resultado - Resultado del servidor
+       */
+      mostrarMensajeExito(resultado) {
+          const mensaje = resultado.message || 'Atención médica guardada exitosamente';
+          const id = resultado.id || 'N/A';
+
+          alert(`✅ ${mensaje}\n\n` +
+                `ID de Atención: ${id}\n` +
+                `Medicamentos: ${this.medicamentos.length}\n` +
+                `Diagnósticos: ${this.diagnostico.length}\n` +
+                `Fecha: ${new Date().toLocaleString()}`);
+      }
+
+      /**
+       * Método para mostrar mensaje de error
+       * @param {string} mensaje - Mensaje de error
+       */
+      mostrarMensajeError(mensaje) {
+          alert(`❌ Error al guardar:\n\n${mensaje}\n\nRevise la conexión e intente nuevamente.`);
+      }
+
+      /**
+       * Método para manejar errores de conexión
+       * @param {Object} datos - Datos a guardar offline
+       */
+      manejarErrorConexion(datos) {
+          const guardarOffline = confirm(
+              '❌ No se pudo conectar con el servidor.\n\n' +
+              '¿Desea guardar los datos localmente?\n\n' +
+              '(Los datos se enviarán cuando se restaure la conexión)'
+          );
+
+          if (guardarOffline) {
+              this.guardarDatosOffline(datos);
+              alert('💾 Datos guardados localmente.\n\nSe enviarán automáticamente cuando se restaure la conexión.');
+          }
+      }
+
+      /**
+       * Método para guardar datos offline
+       * @param {Object} datos - Datos a guardar
+       */
+      guardarDatosOffline(datos) {
+          try {
+              const datosOffline = JSON.parse(localStorage.getItem('atencionesOffline') || '[]');
+              datosOffline.push({
+                  ...datos,
+                  fechaGuardadoOffline: new Date().toISOString(),
+                  id_temporal: 'offline_' + Date.now()
+              });
+              localStorage.setItem('atencionesOffline', JSON.stringify(datosOffline));
+              console.log('💾 Datos guardados offline:', datos);
+          } catch (error) {
+              console.error('❌ Error al guardar offline:', error);
+          }
+      }
+
+      // ============================================
+      // 3.6 UTILIDADES Y VALIDACIONES
+      // ============================================
+
+      /**
+       * Método para limpiar el formulario
+       */
+      limpiarFormulario() {
+          const campos = [
+              'id_presion_arterial', 'id_pulso', 'id_temperatura', 'id_frecuencia_respiratoria',
+              'id_saturacion_oxigeno', 'id_peso', 'id_altura', 'id_motivo_consulta',
+              'id_sintomas', 'id_examen_fisico', 'id_tratamiento', 'id_examenes_enviados',
+              'id_comentario_adicional'
+          ];
+
+          campos.forEach(id => {
+              const elemento = this.obtenerElementoSeguro(id);
+              if (elemento) {
+                  elemento.value = '';
+              }
+          });
+
+          // Limpiar checkbox
+          const checkbox = this.obtenerElementoSeguro('id_consulta_control');
+          if (checkbox) {
+              checkbox.checked = false;
+          }
+
+          // Limpiar diagnósticos
+          const diagnosticoLista = this.obtenerElementoSeguro('diagnosticos-lista');
+          const diagnosticoSelect = this.obtenerElementoSeguro('id_diagnostico');
+
+          if (diagnosticoLista) diagnosticoLista.innerHTML = '';
+          if (diagnosticoSelect) diagnosticoSelect.innerHTML = '';
+
+          // Limpiar medicamentos
+          this.medicamentos = [];
+          this.actualizarTablaMedicamentos();
+
+          console.log('🧹 Formulario limpiado');
+      }
+
+      /**
+       * Método para validar campos obligatorios
+       * @returns {Array} - Array de errores encontrados
+       */
+      validarCamposObligatorios() {
+          const errores = [];
+
+          if (!this.motivoConsulta.trim()) errores.push('- Motivo de Consulta');
+          if (!this.sintomas.trim()) errores.push('- Síntomas');
+          if (this.diagnostico.length === 0) errores.push('- Diagnósticos');
+          if (!this.tratamiento.trim()) errores.push('- Plan de Tratamiento');
+
+          return errores;
+      }
+
+     /**
+   * Método para obtener todos los datos estructurados con conversiones numéricas
+   * @returns {Object} - Objeto con todos los datos de la atención
+   */
+   obtenerDatosCompletos() {
+      // Función auxiliar para convertir a número o null
+      const convertirANumero = (valor) => {
+          if (!valor || valor === '') return null;
+          const numero = parseFloat(valor);
+          return isNaN(numero) ? null : numero;
+      };
+
+      // Función auxiliar para convertir a entero o null
+      const convertirAEntero = (valor) => {
+          if (!valor || valor === '') return null;
+          const numero = parseInt(valor);
+          return isNaN(numero) ? null : numero;
+      };
+
+      // Procesar medicamentos con conversiones numéricas
+      const medicamentosProcesados = this.medicamentos.map(med => ({
+          id: convertirAEntero(med.id),
+          medicamento: med.medicamento,
+          cantidad: convertirAEntero(med.cantidad),
+          prescripcion: med.prescripcion,
+          duracion: convertirAEntero(med.duracion),
+          frecuencia: convertirAEntero(med.frecuencia)
+      }));
+
+      return {
+          paciente: convertirAEntero(this.paciente),
+          signosVitales: {
+              presionArterial: this.presionArterial, // Se mantiene como string (ej: "120/80")
+              pulso: convertirAEntero(this.pulso),
+              temperatura: convertirANumero(this.temperatura),
+              frecuenciaRespiratoria: convertirAEntero(this.frecuenciaRespiratoria),
+              saturacionOxigeno: convertirANumero(this.saturacionOxigeno),
+              peso: convertirANumero(this.peso),
+              altura: convertirANumero(this.altura),
+              consultaControl: Boolean(this.consultaControl)
+          },
+          evaluacionClinica: {
+              motivoConsulta: this.motivoConsulta,
+              sintomas: this.sintomas,
+              examenFisico: this.examenFisico,
+              diagnostico: this.diagnostico
+          },
+          planTerapeutico: {
+              tratamiento: this.tratamiento,
+              examenesEnviados: this.examenesEnviados,
+              comentarioAdicional: this.comentarioAdicional
+          },
+          medicamentos: medicamentosProcesados,
+          fechaAtencion: new Date().toISOString(),
+          totalMedicamentos: this.medicamentos.length,
+          totalDiagnosticos: this.diagnostico.length
+      };
+   }
+
+      /**
+       * Método para mostrar datos
+       */
+      verDatos() {
+          const url = "/admin/core/medicamento/add/?_to_field=id&_popup=1";
+          window.open(url, "_blank", "width=800,height=600,resizable=yes,scrollbars=yes");
+      }
+  }
+
+  // ==============================
+  // 4. SELECTOR DE PACIENTES
+  // ==============================
+
+  /**
+   * Elementos DOM para el selector de pacientes
+   */
+  let searchInput, dropdown, pacientesList, loadingIndicator, searchIcon, clearButton, noResults, minCharsMessage, datosContainer, noMensaje;
+
+  /**
+   * Función para manejar el input de búsqueda
+   * @param {Event} e - Evento del input
+   */
+  function handleSearchInput(e) {
+      const query = e.target.value.trim();
+
+      // Mostrar/ocultar botón de limpiar
+      if (query.length > 0) {
+          clearButton.classList.remove('hidden');
+          searchIcon.classList.add('hidden');
+      } else {
+          clearButton.classList.add('hidden');
+          searchIcon.classList.remove('hidden');
+          ocultarDropdown();
+          return;
+      }
+
+      // Limpiar timeout anterior
+      if (searchTimeout) {
+          clearTimeout(searchTimeout);
+      }
+
+      // Configurar nuevo timeout
+      searchTimeout = setTimeout(() => {
+          if (query.length >= 3) {
+              buscarPacientes(query);
+          } else if (query.length > 0) {
+              mostrarMensajeMinCaracteres();
+          } else {
+              ocultarDropdown();
+          }
+      }, 300); // Debounce de 300ms
+  }
+
+  /**
+   * Función para manejar el foco del input
+   */
+  function handleInputFocus() {
+      const query = searchInput.value.trim();
+      if (query.length >= 3) {
+          mostrarDropdown();
+      } else if (query.length > 0) {
+          mostrarMensajeMinCaracteres();
+      }
+  }
+
+  /**
+   * Función para manejar cuando se pierde el foco
+   */
+  function handleInputBlur() {
+      // Pequeño delay para permitir clicks en el dropdown
+      setTimeout(() => {
+          if (!dropdown.matches(':hover')) {
+              ocultarDropdown();
+          }
+      }, 200);
+  }
+
+  /**
+   * Función para manejar clicks en el documento
+   * @param {Event} e - Evento del click
+   */
+  function handleDocumentClick(e) {
+      if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+          ocultarDropdown();
+      }
+  }
+
+  /**
+   * Función para buscar pacientes en el backend
+   * @param {string} query - Término de búsqueda
+   */
+  async function buscarPacientes(query) {
+      if (isSearching) return;
+
+      isSearching = true;
+      mostrarIndicadorCarga();
+
+      try {
+          // Construir URL con parámetros
+          const url = new URL(window.location.origin + '/core/paciente_find/');
+          url.searchParams.append('q', query);
+
+          const response = await fetch(url, {
+              method: 'GET',
+              headers: {
+                  'X-Requested-With': 'XMLHttpRequest',
+                  'Content-Type': 'application/json',
+              },
+          });
+
+          if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          mostrarResultados(data.pacientes || []);
+
+      } catch (error) {
+          console.error('Error al buscar pacientes:', error);
+          mostrarError('Error al buscar pacientes. Por favor, intente nuevamente.');
+      } finally {
+          isSearching = false;
+          ocultarIndicadorCarga();
+      }
+  }
+
+  /**
+   * Función para mostrar los resultados de búsqueda
+   * @param {Array} pacientes - Lista de pacientes encontrados
+   */
+  function mostrarResultados(pacientes) {
+      pacientesList.innerHTML = '';
+
+      if (pacientes.length === 0) {
+          noResults.classList.remove('hidden');
+          minCharsMessage.classList.add('hidden');
+      } else {
+          noResults.classList.add('hidden');
+          minCharsMessage.classList.add('hidden');
+
+          pacientes.forEach(paciente => {
+              const option = crearOpcionPaciente(paciente);
+              pacientesList.appendChild(option);
+          });
+      }
+
+      mostrarDropdown();
+  }
+
+  /**
+   * Función para crear una opción de paciente
+   * @param {Object} paciente - Datos del paciente
+   * @returns {HTMLElement} - Elemento DOM de la opción
+   */
+  function crearOpcionPaciente(paciente) {
+      const option = document.createElement('div');
+      option.className = 'px-4 py-3 cursor-pointer option-hover transition-colors duration-150 border-b border-gray-50 last:border-b-0';
+      option.setAttribute('data-paciente-id', paciente.id);
+
+      option.innerHTML = `
+          <div class="flex items-center space-x-3">
+              <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                  ${(paciente.nombres?.charAt(0) || '') + (paciente.apellidos?.charAt(0) || '')}
+              </div>
+              <div class="flex-1 min-w-0">
+                  <div class="text-sm font-medium text-gray-900 truncate">
+                      ${paciente.nombres || ''} ${paciente.apellidos || ''}
+                  </div>
+                  <div class="text-xs text-gray-500 truncate">
+                      CI: ${paciente.cedula_ecuatoriana || paciente.dni || 'No disponible'} |
+                      Tel: ${paciente.telefono || 'No disponible'}
+                  </div>
+              </div>
+          </div>
+      `;
+
+      option.addEventListener('click', () => seleccionarPaciente(paciente));
+
+      return option;
+  }
+
+  /**
+   * Función para seleccionar un paciente
+   * @param {Object} paciente - Datos del paciente seleccionado
+   */
+  function seleccionarPaciente(paciente) {
+      pacienteSeleccionado = paciente;
+
+      // Actualizar el input
+      searchInput.value = `${paciente.id} - ${paciente.nombres} ${paciente.apellidos} - CI: ${paciente.cedula_ecuatoriana || paciente.dni}`;
+      document.getElementById('id_paciente').value=paciente.id
+      // Ocultar dropdown
+      ocultarDropdown();
+
+      // Cargar datos del paciente
+      cargarDatosPaciente(paciente);
+      cargarConsultas(paciente.atenciones);
+  }
+
+  /**
+   * Función para cargar los datos del paciente en la interfaz
+   * @param {Object} paciente - Datos del paciente
+   */
+  function cargarDatosPaciente(paciente) {
+      // Calcular edad
+      const edad = calcularEdad(paciente.fecha_nacimiento);
+
+      // Actualizar información personal
+      document.getElementById('paciente-nombre').textContent =
+          `${paciente.nombres || ''} ${paciente.apellidos || ''}`;
+      document.getElementById('paciente-foto').src = paciente.foto_url;
+      document.getElementById('paciente-telefono').textContent = paciente.telefono || 'No disponible';
+      document.getElementById('paciente-direccion').textContent = paciente.direccion || 'No disponible';
+      document.getElementById('paciente-email').textContent = paciente.email || 'No disponible';
+      document.getElementById('paciente-edad').textContent = edad;
+      document.getElementById('paciente-cedula').textContent =
+          `CI: ${paciente.cedula_ecuatoriana || paciente.dni || 'No disponible'}`;
+
+      // Datos fijos de la nueva atención
+      document.getElementById('paciente-foto2').src = paciente.foto_url;
+      document.getElementById('paciente-edad2').textContent = edad;
+      document.getElementById('paciente-nombre2').textContent =
+          `${paciente.nombres || ''} ${paciente.apellidos || ''}`;
+      document.getElementById('id_paciente').textContent = paciente.id;
+
+      // Actualizar historia clínica
+      document.getElementById('antecedentes-personales').value = paciente.antecedentes_personales || '';
+      document.getElementById('antecedentes-quirurgicos').value = paciente.antecedentes_quirurgicos || '';
+      document.getElementById('antecedentes-familiares').value = paciente.antecedentes_familiares || '';
+      document.getElementById('alergias').value = paciente.alergias || '';
+      document.getElementById('medicamentos-actuales').value = paciente.medicamentos_actuales || '';
+      document.getElementById('habitos-toxicos').value = paciente.habitos_toxicos || '';
+      document.getElementById('vacunas').value = paciente.vacunas || '';
+      document.getElementById('antecedentes-gineco').value = paciente.antecedentes_gineco_obstetricos || '';
+
+      // Mostrar contenedor de datos y ocultar mensaje
+      datosContainer.classList.remove('hidden');
+      noMensaje.classList.add('hidden');
+  }
+
+  /**
+   * Función para calcular la edad
+   * @param {string} fechaNacimiento - Fecha de nacimiento
+   * @returns {string} - Edad calculada
+   */
+  function calcularEdad(fechaNacimiento) {
+      if (!fechaNacimiento) return 'No disponible';
+
+      const hoy = new Date();
+      const nacimiento = new Date(fechaNacimiento);
+      let edad = hoy.getFullYear() - nacimiento.getFullYear();
+      const meses = hoy.getMonth() - nacimiento.getMonth();
+
+      if (meses < 0 || (meses === 0 && hoy.getDate() < nacimiento.getDate())) {
+          edad--;
+      }
+
+      return `${edad} años`;
+  }
+
+  /**
+   * Función para limpiar la selección de paciente
+   */
+  function limpiarSeleccion() {
+      searchInput.value = '';
+      pacienteSeleccionado = null;
+      clearButton.classList.add('hidden');
+      searchIcon.classList.remove('hidden');
+      ocultarDropdown();
+
+      // Ocultar datos del paciente
+      datosContainer.classList.add('hidden');
+      noMensaje.classList.remove('hidden');
+
+      // Enfocar el input
+      searchInput.focus();
+  }
+
+  // Funciones auxiliares para el dropdown
+  function mostrarDropdown() {
+      dropdown.classList.remove('dropdown-closed');
+      dropdown.classList.add('dropdown-open');
+  }
+
+  function ocultarDropdown() {
+      dropdown.classList.remove('dropdown-open');
+      dropdown.classList.add('dropdown-closed');
+  }
+
+  function mostrarMensajeMinCaracteres() {
+      pacientesList.innerHTML = '';
+      noResults.classList.add('hidden');
+      minCharsMessage.classList.remove('hidden');
+      mostrarDropdown();
+  }
+
+  function mostrarIndicadorCarga() {
+      loadingIndicator.classList.remove('hidden');
+      searchIcon.classList.add('hidden');
+      clearButton.classList.add('hidden');
+  }
+
+  function ocultarIndicadorCarga() {
+      loadingIndicator.classList.add('hidden');
+      searchIcon.classList.remove('hidden');
+
+      if (searchInput.value.trim().length > 0) {
+          clearButton.classList.remove('hidden');
+          searchIcon.classList.add('hidden');
+      }
+  }
+
+  function mostrarError(mensaje) {
+      pacientesList.innerHTML = `
+          <div class="p-4 text-center text-red-500">
+              <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              ${mensaje}
+          </div>
+      `;
+      noResults.classList.add('hidden');
+      minCharsMessage.classList.add('hidden');
+      mostrarDropdown();
+  }
+
+  // ==============================
+  // 5. HISTORIAL DE ATENCIONES
+  // ==============================
+
+  /**
+   * Función para cargar las consultas dinámicamente
+   * @param {Array} atenciones - Lista de atenciones del paciente
+   */
+  function cargarConsultas(atenciones) {
+      const container = document.getElementById('consultas-container');
+      const noConsultasMsg = document.getElementById('no-consultas-mensaje');
+
+      // Limpiar contenedor
+      container.innerHTML = '';
+
+      if (!atenciones || atenciones.length === 0) {
+          noConsultasMsg.classList.remove('hidden');
+          return;
+      }
+
+      noConsultasMsg.classList.add('hidden');
+
+      // Renderizar cada consulta
+      atenciones.forEach((atencion, index) => {
+          const consultaElement = crearConsultaElement(atencion, index);
+          container.appendChild(consultaElement);
+      });
+  }
+
+  /**
+   * Función para crear el elemento HTML de una consulta
+   * @param {Object} atencion - Datos de la atención médica
+   * @param {number} index - Índice de la consulta
+   * @returns {HTMLElement} - Elemento DOM de la consulta
+   */
+  function crearConsultaElement(atencion, index) {
+      const consultaDiv = document.createElement('div');
+
+      // Determinar color del borde según el tipo de consulta
+      const colorConfig = getColorConfig(atencion.tipo_consulta);
+
+      consultaDiv.className = `bg-white rounded-2xl shadow-xl p-8 card-hover transition-all duration-300 border-l-4 ${colorConfig.border}`;
+
+      // Formatear fecha
+      const fecha = new Date(atencion.fecha_atencion);
+      const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+      });
+
+      consultaDiv.innerHTML = `
+          <div class="flex justify-between items-start mb-6">
+              <div class="flex items-center space-x-3">
+                  <div class="w-4 h-4 ${colorConfig.dot} rounded-full"></div>
+                  <h3 class="text-xl font-bold text-gray-800">${fechaFormateada}</h3>
+                  <span class="${colorConfig.badge} px-3 py-1 rounded-full text-sm font-medium">${atencion.tipo_consulta}</span>
+              </div>
+              <button class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                  </svg>
+              </button>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <!-- Evaluación Clínica -->
+              <div class="lg:col-span-2 space-y-4">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div class="bg-blue-50 p-4 rounded-xl">
+                          <h4 class="font-semibold text-blue-800 text-sm mb-2">Motivo de Consulta</h4>
+                          <p class="text-blue-700">${atencion.motivo_consulta || 'No especificado'}</p>
+                      </div>
+                      <div class="bg-purple-50 p-4 rounded-xl">
+                          <h4 class="font-semibold text-purple-800 text-sm mb-2">Síntomas</h4>
+                          <p class="text-purple-700">${atencion.sintomas || 'No especificado'}</p>
+                      </div>
+                  </div>
+
+                  ${atencion.examen_fisico ? `
+                      <div class="bg-green-50 p-4 rounded-xl">
+                          <h4 class="font-semibold text-green-800 text-sm mb-2">Examen Físico</h4>
+                          <p class="text-green-700">${atencion.examen_fisico}</p>
+                      </div>
+                  ` : ''}
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div class="bg-red-50 p-4 rounded-xl">
+                          <h4 class="font-semibold text-red-800 text-sm mb-2">Diagnósticos</h4>
+                          <p class="text-red-700">${atencion.diagnosticos && atencion.diagnosticos.length > 0 ? atencion.diagnosticos.join(', ') : 'Sin diagnósticos registrados'}</p>
+                      </div>
+                      <div class="bg-cyan-50 p-4 rounded-xl">
+                          <h4 class="font-semibold text-cyan-800 text-sm mb-2">Plan de Tratamiento</h4>
+                          <p class="text-cyan-700">${atencion.tratamiento || 'No especificado'}</p>
+                      </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      ${atencion.examenes_enviados ? `
+                          <div class="bg-yellow-50 p-4 rounded-xl">
+                              <h4 class="font-semibold text-yellow-800 text-sm mb-2">Exámenes Solicitados</h4>
+                              <p class="text-yellow-700">${atencion.examenes_enviados}</p>
+                          </div>
+                      ` : ''}
+                      ${atencion.comentario_adicional ? `
+                          <div class="bg-gray-50 p-4 rounded-xl">
+                              <h4 class="font-semibold text-gray-800 text-sm mb-2">Comentario Adicional</h4>
+                              <p class="text-gray-700">${atencion.comentario_adicional}</p>
+                          </div>
+                      ` : ''}
+                  </div>
+
+                  <!-- Prescripciones -->
+                  ${crearPrescripcionesHTML(atencion.prescripciones)}
+              </div>
+
+              <!-- Signos Vitales -->
+              <div class="lg:col-span-1">
+                  <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl">
+                      <h4 class="font-bold text-gray-800 mb-4 flex items-center">
+                          <svg class="w-4 h-4 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                          </svg>
+                          Signos Vitales
+                      </h4>
+                      <div class="space-y-3">
+                          ${crearSignosVitalesHTML(atencion)}
+                      </div>
+                  </div>
+              </div>
+          </div>
+      `;
+
+      return consultaDiv;
+  }
+
+  /**
+   * Función para obtener configuración de colores según tipo de consulta
+   * @param {string} tipoConsulta - Tipo de consulta
+   * @returns {Object} - Configuración de colores
+   */
+  function getColorConfig(tipoConsulta) {
+      const configs = {
+          'Control': {
+              border: 'border-blue-500',
+              dot: 'bg-blue-500',
+              badge: 'bg-blue-100 text-blue-800'
+          },
+          'Urgencia': {
+              border: 'border-green-500',
+              dot: 'bg-green-500',
+              badge: 'bg-green-100 text-green-800'
+          },
+          'Chequeo': {
+              border: 'border-purple-500',
+              dot: 'bg-purple-500',
+              badge: 'bg-purple-100 text-purple-800'
+          }
+      };
+
+      return configs[tipoConsulta] || configs['Chequeo'];
+  }
+
+  /**
+   * Función para crear HTML de signos vitales
+   * @param {Object} atencion - Datos de la atención
+   * @returns {string} - HTML de los signos vitales
+   */
+  function crearSignosVitalesHTML(atencion) {
+      const signos = [
+          { label: 'Presión Arterial:', valor: atencion.presion_arterial },
+          { label: 'Pulso:', valor: atencion.pulso ? `${atencion.pulso} ppm` : null },
+          { label: 'Temperatura:', valor: atencion.temperatura ? `${atencion.temperatura}°C` : null },
+          { label: 'Freq. Respiratoria:', valor: atencion.frecuencia_respiratoria ? `${atencion.frecuencia_respiratoria} rpm` : null },
+          { label: 'Saturación O2:', valor: atencion.saturacion_oxigeno ? `${atencion.saturacion_oxigeno}%` : null },
+          { label: 'Peso:', valor: atencion.peso ? `${atencion.peso} kg` : null },
+          { label: 'Altura:', valor: atencion.altura ? `${atencion.altura} m` : null },
+          { label: 'IMC:', valor: atencion.imc ? atencion.imc : null }
+      ];
+
+      return signos
+          .filter(signo => signo.valor)
+          .map(signo => `
+              <div class="flex justify-between items-center">
+                  <span class="text-sm text-gray-600">${signo.label}</span>
+                  <span class="font-semibold text-gray-800">${signo.valor}</span>
+              </div>
+          `).join('');
+  }
+
+  /**
+   * Función para crear HTML de prescripciones
+   * @param {Array} prescripciones - Lista de prescripciones
+   * @returns {string} - HTML de las prescripciones
+   */
+  function crearPrescripcionesHTML(prescripciones) {
+      if (!prescripciones || prescripciones.length === 0) {
+          return '';
+      }
+
+      const prescripcionesHTML = prescripciones.map(prescripcion => `
+          <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-xl">
+              <div class="flex items-start">
+                  <div class="flex-shrink-0">
+                      <svg class="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                      </svg>
+                  </div>
+                  <div class="ml-3 flex-1">
+                      <h6 class="text-sm font-semibold text-orange-800">${prescripcion.medicamento || 'Medicamento no especificado'}</h6>
+                      <p class="text-sm text-orange-700 mt-1">${prescripcion.prescripcion || 'Sin instrucciones'}</p>
+                      <div class="mt-2 text-xs text-orange-600 space-x-4">
+                          ${prescripcion.cantidad ? `<span>Cantidad: ${prescripcion.cantidad}</span>` : ''}
+                          ${prescripcion.frecuencia_diaria ? `<span>Frecuencia: ${prescripcion.frecuencia_diaria} veces/día</span>` : ''}
+                          ${prescripcion.duracion_tratamiento ? `<span>Duración: ${prescripcion.duracion_tratamiento} días</span>` : ''}
+                      </div>
+                  </div>
+              </div>
+          </div>
+      `).join('');
+
+      return `
+          <div class="bg-orange-25 p-4 rounded-xl">
+              <h4 class="font-semibold text-orange-800 text-sm mb-3">Prescripciones</h4>
+              <div class="space-y-3">
+                  ${prescripcionesHTML}
+              </div>
+          </div>
+      `;
+  }
+
+  /**
+   * Función para integrar con el selector de pacientes
+   * @param {Object} paciente - Datos del paciente
+   */
+  function cargarConsultasPaciente(paciente) {
+      if (paciente && paciente.atenciones) {
+          cargarConsultas(paciente.atenciones);
+      } else {
+          cargarConsultas([]);
+      }
+  }
+
+  // ==============================
+  // 6. MODAL PARA NUEVO PACIENTE
+  // ==============================
+
+  /**
+   * Función para mostrar formulario de nuevo paciente
+   */
+  function mostrarFormularioNuevoPaciente() {
+      document.getElementById('modal-agregar-paciente').classList.remove('hidden');
+      document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+  }
+
+  /**
+   * Función para cerrar modal
+   */
+  function cerrarModalPaciente() {
+      document.getElementById('modal-agregar-paciente').classList.add('hidden');
+      document.body.style.overflow = 'auto'; // Restaurar scroll del body
+      document.getElementById('form-nuevo-paciente').reset(); // Limpiar formulario
+  }
+
+  /**
+   * Función para toggle del acordeón
+   * @param {string} section - Sección del acordeón
+   */
+  function toggleAccordion(section) {
+      const content = document.getElementById(`content-${section}`);
+      const icon = document.getElementById(`icon-${section}`);
+
+      if (content.classList.contains('hidden')) {
+          content.classList.remove('hidden');
+          icon.classList.remove('rotate-180');
+      } else {
+          content.classList.add('hidden');
+          icon.classList.add('rotate-180');
+      }
+  }
+
+  /**
+   * Función de validación del formulario de paciente
+   * @param {Object} data - Datos del formulario
+   * @returns {boolean} - True si es válido
+   */
+  function validarFormulario(data) {
+      // Validar campos requeridos
+      const camposRequeridos = ['nombres', 'apellidos', 'cedula_ecuatoriana', 'fecha_nacimiento', 'telefono', 'sexo', 'estado_civil', 'direccion'];
+
+      for (let campo of camposRequeridos) {
+          if (!data[campo] || data[campo].trim() === '') {
+              alert(`❌ Error: El campo "${getCampoNombre(campo)}" es obligatorio.`);
+              document.getElementById(campo).focus();
+              return false;
+          }
+      }
+
+      // Validar formato de cédula (10 dígitos)
+      if (data.cedula_ecuatoriana && !/^\d{10}$/.test(data.cedula_ecuatoriana)) {
+          alert('❌ Error: La cédula ecuatoriana debe tener exactamente 10 dígitos.');
+          document.getElementById('cedula_ecuatoriana').focus();
+          return false;
+      }
+
+      // Validar email si se proporciona
+      if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+          alert('❌ Error: Ingrese un correo electrónico válido.');
+          document.getElementById('email').focus();
+          return false;
+      }
+
+      // Validar fecha de nacimiento (no debe ser futura)
+      if (data.fecha_nacimiento) {
+          const fechaNac = new Date(data.fecha_nacimiento);
+          const hoy = new Date();
+          if (fechaNac > hoy) {
+              alert('❌ Error: La fecha de nacimiento no puede ser futura.');
+              document.getElementById('fecha_nacimiento').focus();
+              return false;
+          }
+      }
+
+      return true;
+  }
+
+  /**
+   * Función auxiliar para obtener nombres legibles de campos
+   * @param {string} campo - Nombre del campo
+   * @returns {string} - Nombre legible
+   */
+  function getCampoNombre(campo) {
+      const nombres = {
+          'nombres': 'Nombres',
+          'apellidos': 'Apellidos',
+          'cedula_ecuatoriana': 'Cédula Ecuatoriana',
+          'fecha_nacimiento': 'Fecha de Nacimiento',
+          'telefono': 'Teléfono',
+          'sexo': 'Sexo',
+          'estado_civil': 'Estado Civil',
+          'direccion': 'Dirección'
+      };
+      return nombres[campo] || campo;
+  }
+
+  /**
+   * Obtener token CSRF para Django
+   * @param {string} name - Nombre de la cookie
+   * @returns {string|null} - Valor de la cookie
+   */
+  function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+
+  // ==============================
+  // 7. FUNCIONES GLOBALES SEGURAS
+  // ==============================
+
+  /**
+   * Función para inicializar de forma segura
+   * @returns {boolean} - True si se inicializó correctamente
+   */
+  function inicializarAtencion() {
+      try {
+          console.log('🔄 Intentando inicializar el sistema...');
+          atencionMedica = new GestorAtencionMedica();
+          console.log('✅ Sistema de atención médica inicializado correctamente');
+          console.log('📋 Instancia creada:', atencionMedica);
+          return true;
+      } catch (error) {
+          console.error('❌ Error al inicializar:', error);
+          alert('Error al inicializar el sistema: ' + error.message);
+          return false;
+      }
+  }
+
+  /**
+   * Función global para agregar medicamento
+   */
+  function agregarMedicamento() {
+      console.log('🔄 Función agregarMedicamento() llamada');
+
+      if (!atencionMedica) {
+          console.log('⚠️ Sistema no inicializado, intentando inicializar...');
+          if (!inicializarAtencion()) {
+              return;
+          }
+      }
+
+      try {
+          atencionMedica.agregarMedicamento();
+      } catch (error) {
+          console.error('❌ Error en agregarMedicamento:', error);
+          alert('Error al agregar medicamento: ' + error.message);
+      }
+  }
+
+  /**
+   * Función global para eliminar medicamento de forma segura
+   * @param {number} index - Índice del medicamento a eliminar
+   */
+  function eliminarMedicamentoSeguro(index) {
+      if (atencionMedica) {
+          atencionMedica.eliminarMedicamento(index);
+      } else {
+          console.error('❌ Sistema no inicializado');
+      }
+  }
+
+  /**
+   * Función global para grabar atención
+   */
+  function grabarAtencion() {
+      console.log('🔄 Función grabarAtencion() llamada');
+
+      if (!atencionMedica) {
+          console.log('⚠️ Sistema no inicializado, intentando inicializar...');
+          if (!inicializarAtencion()) {
+              return;
+          }
+      }
+
+      try {
+          atencionMedica.grabarAtencion();
+      } catch (error) {
+          console.error('❌ Error en grabarAtencion:', error);
+          alert('Error al grabar atención: ' + error.message);
+      }
+  }
+
+  /**
+   * Función global para agregar diagnóstico
+   */
+  function agregarDiagnostico() {
+      console.log('🔄 Función agregarDiagnostico() llamada');
+
+      if (!atencionMedica) {
+          console.log('⚠️ Sistema no inicializado, intentando inicializar...');
+          if (!inicializarAtencion()) {
+              return;
+          }
+      }
+
+      try {
+          atencionMedica.agregarDiagnostico();
+      } catch (error) {
+          console.error('❌ Error en agregarDiagnostico:', error);
+          alert('Error al agregar diagnóstico: ' + error.message);
+      }
+  }
+
+  /**
+   * Función global para ver datos
+   */
+  function verDatos() {
+      if (!atencionMedica) {
+          console.log('⚠️ Sistema no inicializado, intentando inicializar...');
+          if (!inicializarAtencion()) {
+              return;
+          }
+      }
+
+      atencionMedica.verDatos();
+  }
+
+  /**
+   * Función para verificar el estado del sistema
+   * @returns {boolean} - Estado del sistema
+   */
+  function verificarSistema() {
+      console.log('🔍 Estado del sistema:');
+      console.log('   atencionMedica:', atencionMedica);
+      console.log('   Tipo:', typeof atencionMedica);
+      console.log('   DOM ready:', document.readyState);
+      return atencionMedica !== null;
+  }
+
+  // ==============================
+  // 8. INICIALIZACIÓN Y EVENTOS CONSOLIDADOS
+  // ==============================
+
+  /**
+   * Función principal de inicialización cuando el DOM está listo
+   */
+  document.addEventListener('DOMContentLoaded', function() {
+      console.log('📄 DOM cargado, inicializando sistema completo...');
+
+      // ============================================
+      // 8.1 INICIALIZAR SISTEMA DE ATENCIÓN MÉDICA
+      // ============================================
+      inicializarAtencion();
+
+      // ============================================
+      // 8.2 INICIALIZAR SELECTOR DE PACIENTES
+      // ============================================
+      // Obtener elementos DOM
+      searchInput = document.getElementById('paciente-search-input');
+      dropdown = document.getElementById('pacientes-dropdown');
+      pacientesList = document.getElementById('pacientes-list');
+      loadingIndicator = document.getElementById('loading-indicator');
+      searchIcon = document.getElementById('search-icon');
+      clearButton = document.getElementById('clear-button');
+      noResults = document.getElementById('no-results');
+      minCharsMessage = document.getElementById('min-chars-message');
+      datosContainer = document.getElementById('datos-paciente-container');
+      noMensaje = document.getElementById('no-paciente-mensaje');
+
+      // Configurar Event Listeners para selector de pacientes
+      if (searchInput) {
+          searchInput.addEventListener('input', handleSearchInput);
+          searchInput.addEventListener('focus', handleInputFocus);
+          searchInput.addEventListener('blur', handleInputBlur);
+      }
+
+      document.addEventListener('click', handleDocumentClick);
+       // ============================================
+      // 8.2.1 CARGAR PACIENTE EN MODO EDICIÓN
+      // ============================================
+      // Si estamos editando una atención, cargar el paciente automáticamente
+      if (typeof pacienteDesdeServidor !== 'undefined' && pacienteDesdeServidor !== null) {
+          console.log('🔄 Cargando paciente para edición:', pacienteDesdeServidor.nombres, pacienteDesdeServidor.apellidos);
+          seleccionarPaciente(pacienteDesdeServidor);
+      }
+      // Fin de cargar paciente en modo edicion
+
+
+      // ============================================
+      // 8.3 INICIALIZAR MODAL DE NUEVO PACIENTE
+      // ============================================
+      const formNuevoPaciente = document.getElementById('form-nuevo-paciente');
+      if (formNuevoPaciente) {
+          formNuevoPaciente.addEventListener('submit', function(e) {
+              e.preventDefault();
+
+              // Obtener datos del formulario
+              const formData = new FormData(this);
+              const pacienteData = {};
+
+              // Convertir FormData a objeto
+              for (let [key, value] of formData.entries()) {
+                  pacienteData[key] = value;
+              }
+
+              // Validaciones básicas
+              if (!validarFormulario(pacienteData)) {
+                  return;
+              }
+
+              // Aquí iría la lógica para enviar al backend
+              console.log('Datos del nuevo paciente:', pacienteData);
+
+              // Simulación de guardado exitoso
+              alert('✅ Paciente agregado exitosamente!\n\nNombre: ' + pacienteData.nombres + ' ' + pacienteData.apellidos + '\nCédula: ' + pacienteData.cedula_ecuatoriana);
+
+              // Cerrar modal y limpiar formulario
+              cerrarModalPaciente();
+          });
+      }
+
+      // ============================================
+      // 8.4 CONFIGURAR EVENTOS ADICIONALES
+      // ============================================
+
+      // Cerrar modal al hacer clic fuera de él
+      const modalAgregarPaciente = document.getElementById('modal-agregar-paciente');
+      if (modalAgregarPaciente) {
+          modalAgregarPaciente.addEventListener('click', function(e) {
+              if (e.target === this) {
+                  cerrarModalPaciente();
+              }
+          });
+      }
+
+      // Formatear cédula mientras se escribe (solo números)
+      const cedulaInput = document.getElementById('cedula_ecuatoriana');
+      if (cedulaInput) {
+          cedulaInput.addEventListener('input', function(e) {
+              this.value = this.value.replace(/\D/g, '');
+          });
+      }
+
+      // Mostrar/ocultar campo gineco-obstétrico según el sexo
+      const sexoSelect = document.getElementById('sexo');
+      if (sexoSelect) {
+          sexoSelect.addEventListener('change', function() {
+              const ginecoField = document.getElementById('antecedentes_gineco_obstetricos');
+              if (ginecoField) {
+                  const ginecoContainer = ginecoField.closest('div');
+                  if (this.value === 'FEMENINO') {
+                      ginecoContainer.style.display = 'block';
+                  } else {
+                      ginecoContainer.style.display = 'none';
+                      ginecoField.value = '';
+                  }
+              }
+          });
+      }
+
+      // JavaScript para manejar el checkbox de consulta de control
+      const consultaControlCheckbox = document.getElementById('consulta-control');
+      if (consultaControlCheckbox) {
+          consultaControlCheckbox.addEventListener('change', function() {
+              const label = this.nextElementSibling.nextElementSibling;
+              if (this.checked) {
+                  label.textContent = '✓ Sí, es consulta de control';
+                  label.classList.remove('text-teal-700');
+                  label.classList.add('text-teal-800', 'font-semibold');
+              } else {
+                  label.textContent = '¿Es consulta de control?';
+                  label.classList.remove('text-teal-800', 'font-semibold');
+                  label.classList.add('text-teal-700');
+              }
+          });
+      }
+
+      // ============================================
+      // 8.5 INICIALIZAR SISTEMA DE GRABACIÓN POR VOZ
+      // ============================================
+      console.log('🎤 Inicializando sistema de grabación por voz...');
+      const voiceInitialized = initializeSpeechRecognition();
+      if (voiceInitialized) {
+          console.log('✅ Sistema de grabación por voz listo');
+
+          // Mostrar tips de uso solo la primera vez
+          const hasSeenVoiceTips = localStorage.getItem('hasSeenVoiceTips');
+          if (!hasSeenVoiceTips) {
+              setTimeout(() => {
+                  const showTips = confirm(
+                      '🎤 ¡Sistema de grabación por voz activado!\n\n' +
+                      '📝 Tips de uso:\n' +
+                      '• Haga clic en el micrófono para grabar\n' +
+                      '• Hable claramente cerca del micrófono\n' +
+                      '• El texto se agregará automáticamente\n' +
+                      '• Use el botón de basura para limpiar\n\n' +
+                      '¿Desea ver estos tips en el futuro?'
+                  );
+
+                  if (!showTips) {
+                      localStorage.setItem('hasSeenVoiceTips', 'true');
+                  }
+              }, 2000);
+          }
+      } else {
+          console.log('⚠️ Sistema de grabación por voz no disponible en este navegador');
+      }
+
+      // ============================================
+      // 8.6 ANIMACIONES SUAVES AL CARGAR
+      // ============================================
+      const cards = document.querySelectorAll('.card-hover');
+      cards.forEach((card, index) => {
+          card.style.animationDelay = `${index * 0.1}s`;
+      });
+
+      console.log('✅ Sistema completo inicializado correctamente');
+  });
+
+  // ============================================
+  // 8.6 EVENTOS ADICIONALES DE RESPALDO
+  // ============================================
+
+  // Cerrar modal con tecla Escape
+  document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+          // Cerrar modal de agregar paciente
+          const modalPaciente = document.getElementById('modal-agregar-paciente');
+          if (modalPaciente && !modalPaciente.classList.contains('hidden')) {
+              cerrarModalPaciente();
+              return;
+          }
+
+          // Cerrar modal de detalle de atención
+          const modalDetalle = document.getElementById('modal-detalle-atencion');
+          if (modalDetalle && !modalDetalle.classList.contains('hidden')) {
+              closeDetailModal();
+              return;
+          }
+      }
+  });
+
+  // Inicialización de respaldo cuando la ventana termine de cargar
+  window.addEventListener('load', function() {
+      console.log('🪟 Ventana cargada');
+      if (!atencionMedica) {
+          console.log('🔄 Inicialización de respaldo...');
+          inicializarAtencion();
+      }
+  });
+
+  // Inicialización por timeout como último recurso
+  setTimeout(function() {
+      if (!atencionMedica && document.readyState === 'complete') {
+          console.log('⏰ Inicialización por timeout...');
+          inicializarAtencion();
+      }
+  }, 500);
+
+  // ==============================
+  // 9. SISTEMA DE GRABACIÓN POR VOZ
+  // ==============================
+
+  /**
+   * Variables globales para grabación por voz
+   */
+  let recognition = null;
+  let isRecording = false;
+  let currentTargetField = null;
+
+  /**
+   * Inicializar el reconocimiento de voz
+   */
+  function initializeSpeechRecognition() {
+      // Verificar soporte del navegador
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+          console.warn('⚠️ El navegador no soporta reconocimiento de voz');
+          return false;
+      }
+
+      // Crear instancia de reconocimiento
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+
+      // Configurar reconocimiento
+      recognition.lang = 'es-ES'; // Español
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      // Eventos del reconocimiento
+      recognition.onstart = function() {
+          console.log('🎤 Grabación iniciada');
+          isRecording = true;
+          updateVoiceUI(currentTargetField, true);
+      };
+
+      recognition.onresult = function(event) {
+          let finalTranscript = '';
+          let interimTranscript = '';
+
+          // Procesar resultados
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+              const transcript = event.results[i][0].transcript;
+              if (event.results[i].isFinal) {
+                  finalTranscript += transcript;
+              } else {
+                  interimTranscript += transcript;
+              }
+          }
+
+          // Actualizar campo de texto
+          if (currentTargetField && finalTranscript) {
+              const field = document.getElementById(currentTargetField);
+              if (field) {
+                  // Limpiar y formatear el texto
+                  const cleanText = finalTranscript
+                      .trim()
+                      .replace(/\s+/g, ' ') // Remover espacios múltiples
+                      .replace(/^\w/, (c) => c.toUpperCase()); // Capitalizar primera letra
+
+                  // Agregar texto al contenido existente
+                  const currentText = field.value.trim();
+                  if (currentText) {
+                      // Si hay texto existente, agregar con espacio
+                      field.value = currentText + ' ' + cleanText;
+                  } else {
+                      // Si no hay texto, agregar directamente
+                      field.value = cleanText;
+                  }
+
+                  // Ajustar altura del textarea automáticamente
+                  field.style.height = 'auto';
+                  field.style.height = field.scrollHeight + 'px';
+
+                  // Enfocar el campo y posicionar cursor al final
+                  field.focus();
+                  field.setSelectionRange(field.value.length, field.value.length);
+
+                  console.log('✅ Texto agregado:', cleanText);
+              }
+          }
+      };
+
+      recognition.onerror = function(event) {
+          console.error('❌ Error en reconocimiento de voz:', event.error);
+          isRecording = false;
+          updateVoiceUI(currentTargetField, false);
+
+          let errorMessage = 'Error en el reconocimiento de voz';
+          switch(event.error) {
+              case 'network':
+                  errorMessage = 'Error de conexión. Verifique su internet.';
+                  break;
+              case 'not-allowed':
+                  errorMessage = 'Permiso de micrófono denegado. Active el micrófono en su navegador.';
+                  break;
+              case 'no-speech':
+                  errorMessage = 'No se detectó voz. Intente hablar más cerca del micrófono.';
+                  break;
+              case 'audio-capture':
+                  errorMessage = 'No se puede acceder al micrófono.';
+                  break;
+          }
+
+          alert('🎤 ' + errorMessage);
+      };
+
+      recognition.onend = function() {
+          console.log('🎤 Grabación finalizada');
+          isRecording = false;
+          updateVoiceUI(currentTargetField, false);
+      };
+
+      return true;
+  }
+
+  /**
+   * Alternar grabación por voz
+   * @param {string} fieldId - ID del campo de texto
+   */
+  function toggleVoiceRecording(fieldId) {
+      // Inicializar reconocimiento si no existe
+      if (!recognition) {
+          const initialized = initializeSpeechRecognition();
+          if (!initialized) {
+              alert('❌ Su navegador no soporta reconocimiento de voz.\n\nPruebe con Google Chrome o Microsoft Edge.');
+              return;
+          }
+      }
+
+      if (isRecording) {
+          // Detener grabación
+          recognition.stop();
+          currentTargetField = null;
+      } else {
+          // Verificar permisos y comenzar grabación
+          navigator.mediaDevices.getUserMedia({ audio: true })
+              .then(function(stream) {
+                  // Permisos otorgados, iniciar grabación
+                  currentTargetField = fieldId;
+                  recognition.start();
+
+                  // Detener el stream inmediatamente (solo necesitábamos verificar permisos)
+                  stream.getTracks().forEach(track => track.stop());
+              })
+              .catch(function(error) {
+                  console.error('❌ Error de permisos de micrófono:', error);
+                  alert('🎤 Para usar la grabación por voz, debe permitir el acceso al micrófono.\n\nVaya a la configuración de su navegador y habilite el micrófono para este sitio.');
+              });
+      }
+  }
+
+  /**
+   * Actualizar interfaz de usuario para grabación por voz
+   * @param {string} fieldId - ID del campo
+   * @param {boolean} recording - Si está grabando
+   */
+  function updateVoiceUI(fieldId, recording) {
+      if (!fieldId) return;
+
+      // Extraer nombre del campo del ID (remover 'id_' si existe)
+      const fieldName = fieldId.replace('id_', '');
+
+      // Obtener elementos específicos del campo
+      const button = document.getElementById(`btn-voice-${fieldName}`);
+      const micIcon = document.getElementById(`mic-icon-${fieldName}`);
+      const recordingIcon = document.getElementById(`recording-icon-${fieldName}`);
+      const status = document.getElementById(`voice-status-${fieldName}`);
+
+      if (!button || !micIcon || !recordingIcon || !status) {
+          console.warn('⚠️ Elementos de UI de voz no encontrados para:', fieldName);
+          console.log('Buscando elementos:', {
+              button: `btn-voice-${fieldName}`,
+              micIcon: `mic-icon-${fieldName}`,
+              recordingIcon: `recording-icon-${fieldName}`,
+              status: `voice-status-${fieldName}`
+          });
+          return;
+      }
+
+      if (recording) {
+          // Estado grabando
+          button.classList.add('bg-red-100', 'dark:bg-red-900', 'recording', 'voice-recording-button');
+          button.title = 'Detener grabación (Haga clic o espere)';
+          micIcon.classList.add('hidden');
+          recordingIcon.classList.remove('hidden');
+          recordingIcon.classList.add('recording-pulse');
+          status.classList.remove('hidden');
+          status.classList.add('voice-status-indicator');
+
+          // Vibración en dispositivos móviles
+          if (navigator.vibrate) {
+              navigator.vibrate(100);
+          }
+      } else {
+          // Estado normal
+          button.classList.remove('bg-red-100', 'dark:bg-red-900', 'recording');
+          button.classList.add('voice-recording-button');
+          button.title = 'Grabar por voz (Mantenga presionado para grabación continua)';
+          micIcon.classList.remove('hidden');
+          recordingIcon.classList.add('hidden');
+          recordingIcon.classList.remove('recording-pulse');
+          status.classList.add('hidden');
+          status.classList.remove('voice-status-indicator');
+
+          // Vibración de finalización
+          if (navigator.vibrate) {
+              navigator.vibrate([50, 50, 50]);
+          }
+      }
+  }
+
+  /**
+   * Limpiar el campo de voz específico
+   * @param {string} fieldId - ID del campo
+   */
+  function clearVoiceField(fieldId) {
+      const field = document.getElementById(fieldId);
+      if (field) {
+          if (field.value.trim() === '') {
+              // Si el campo ya está vacío, mostrar mensaje
+              alert('ℹ️ El campo ya está vacío.');
+              return;
+          }
+
+          const confirmClear = confirm('🗑️ ¿Desea limpiar todo el contenido del comentario adicional?\n\nEsta acción no se puede deshacer.');
+          if (confirmClear) {
+              field.value = '';
+              field.style.height = 'auto'; // Resetear altura
+              field.focus();
+
+              // Mostrar mensaje de confirmación
+              const fieldName = fieldId.replace('id_', '').replace('_', ' ');
+              console.log(`🧹 Campo "${fieldName}" limpiado exitosamente`);
+
+              // Efecto visual de limpieza
+              field.classList.add('border-green-300');
+              setTimeout(() => {
+                  field.classList.remove('border-green-300');
+              }, 1000);
+          }
+      } else {
+          console.error('❌ Campo no encontrado:', fieldId);
+      }
+  }
+
+  // ==============================
+  // 10. EXPOSICIÓN DE FUNCIONES GLOBALES
+  // ==============================
+
+  // Hacer funciones disponibles globalmente para el HTML
+  window.verificarSistema = verificarSistema;
+  window.inicializarAtencion = inicializarAtencion;
+  window.agregarMedicamento = agregarMedicamento;
+  window.eliminarMedicamentoSeguro = eliminarMedicamentoSeguro;
+  window.grabarAtencion = grabarAtencion;
+  window.agregarDiagnostico = agregarDiagnostico;
+  window.verDatos = verDatos;
+  window.showTab = showTab;
+  window.mostrarFormularioNuevoPaciente = mostrarFormularioNuevoPaciente;
+  window.cerrarModalPaciente = cerrarModalPaciente;
+  window.toggleAccordion = toggleAccordion;
+  window.limpiarSeleccion = limpiarSeleccion;
+  window.openDetailModal = openDetailModal;
+  window.closeDetailModal = closeDetailModal;
+
+  // Funciones de grabación por voz
+  window.toggleVoiceRecording = toggleVoiceRecording;
+  window.clearVoiceField = clearVoiceField;
+  window.initializeSpeechRecognition = initializeSpeechRecognition;
+
+  console.log('📜 Sistema de Atención Médica - Código organizado cargado y esperando inicialización...');
+</script>
+
+{% endblock %}

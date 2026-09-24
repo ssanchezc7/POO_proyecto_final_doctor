@@ -1,0 +1,587 @@
+{% extends 'base.html' %}
+{% block title %}
+    {% if object %}
+        Editar Horario de Atención
+    {% else %}
+        Nuevo Horario de Atención
+    {% endif %} - SaludTotal
+{% endblock %}
+
+{% block content %}
+    {% load static %}
+
+    <!-- Contenedor principal con altura controlada -->
+    <div class="min-h-screen bg-gray-50 whait:bg-gray-900">
+        <div class="w-full px-6 py-8">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 sm:p-8 rounded-lg shadow-lg mb-8">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                    <div class="flex-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold">
+                            <i class="fas fa-{% if object %}edit{% else %}plus{% endif %} mr-2"></i>
+                            {% if object %}
+                                Editar Horario de Atención
+                            {% else %}
+                                Nuevo Horario de Atención
+                            {% endif %}
+                        </h1>
+                        <p class="text-green-100 mt-1 text-sm sm:text-base">
+                            {% if object %}
+                                Modifica la información del horario "{{ object }}"
+                            {% else %}
+                                Crea un nuevo horario de atención en el sistema
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="text-right mt-4 sm:mt-0">
+                        <div class="text-xl sm:text-2xl font-bold">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="text-xs sm:text-sm text-green-100">
+                            Horario de Atención
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario -->
+            <form method="post" class="space-y-6" id="horarioAtencionForm">
+                {% csrf_token %}
+
+                <!-- Contenedor principal del formulario -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+                    <!-- Vista previa del horario -->
+                    <div class="bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+                        <div class="text-center">
+                            <div class="bg-white dark:bg-gray-800 rounded-full w-20 sm:w-24 h-20 sm:h-24 mx-auto flex items-center justify-center shadow-sm border border-gray-200 dark:border-gray-600 mb-3">
+                                <div class="text-center">
+                                    <i class="fas fa-clock text-3xl sm:text-4xl text-blue-600 dark:text-blue-400"></i>
+                                    <div id="diaPreview" class="text-xs sm:text-sm font-bold text-blue-600 dark:text-blue-400 mt-1">
+                                        {% if object %}
+                                            {{ object.get_dia_semana_display }}
+                                        {% else %}
+                                            --
+                                        {% endif %}
+                                    </div>
+                                    <div id="horaPreview" class="text-xs text-gray-500 dark:text-gray-400">
+                                        {% if object %}
+                                            {{ object.hora_inicio|time:"H:i" }}-{{ object.hora_fin|time:"H:i" }}
+                                        {% else %}
+                                            --:-- - --:--
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                                Vista previa del horario
+                            </h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Se actualizará mientras completas el formulario
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Campos del formulario -->
+                    <div class="p-4 sm:p-6">
+                        <!-- Grid de campos principales -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+                            <!-- Campo Día de la Semana -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-calendar-day text-blue-500 mr-1"></i>
+                                    {{ form.dia_semana.label }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">{{ form.dia_semana }}</div>
+                                {% if form.dia_semana.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.dia_semana.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Selecciona el día de la semana para este horario
+                                </p>
+                            </div>
+
+                            <!-- Campo Estado (Activo) -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-toggle-on text-green-500 mr-1"></i>
+                                    Estado
+                                </label>
+                                <div class="flex items-center">
+                                    <div class="flex items-center h-5">{{ form.activo }}</div>
+                                    <div class="ml-3 text-sm">
+                                        <label for="{{ form.activo.id_for_label }}" class="font-medium text-gray-700 dark:text-gray-300">
+                                            {{ form.activo.label }}
+                                        </label>
+                                        <p class="text-gray-500 dark:text-gray-400">
+                                            Los horarios inactivos no serán visibles para asignación
+                                        </p>
+                                    </div>
+                                </div>
+                                {% if form.activo.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.activo.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Sección de Horario Principal -->
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6 mb-6">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                                <i class="fas fa-clock text-blue-500 mr-2"></i>
+                                Horario Principal de Atención
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Hora de Inicio -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <i class="fas fa-play text-green-500 mr-1"></i>
+                                        {{ form.hora_inicio.label }}
+                                        <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div class="relative">{{ form.hora_inicio }}</div>
+                                    {% if form.hora_inicio.errors %}
+                                        <div class="mt-1 text-red-600 text-sm">
+                                            {% for error in form.hora_inicio.errors %}
+                                                <p>{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        Hora de inicio de la jornada laboral
+                                    </p>
+                                </div>
+
+                                <!-- Hora de Fin -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <i class="fas fa-stop text-red-500 mr-1"></i>
+                                        {{ form.hora_fin.label }}
+                                        <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div class="relative">{{ form.hora_fin }}</div>
+                                    {% if form.hora_fin.errors %}
+                                        <div class="mt-1 text-red-600 text-sm">
+                                            {% for error in form.hora_fin.errors %}
+                                                <p>{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        Hora de fin de la jornada laboral
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección de Intervalo de Descanso -->
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6 mb-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                                    <i class="fas fa-coffee text-orange-500 mr-2"></i>
+                                    Intervalo de Descanso (Opcional)
+                                </h3>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="toggleIntervalo" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500" />
+                                    <label for="toggleIntervalo" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                        Incluir pausa
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="intervaloSection" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Intervalo Desde -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <i class="fas fa-pause text-orange-500 mr-1"></i>
+                                        {{ form.intervalo_desde.label }}
+                                    </label>
+                                    <div class="relative">{{ form.intervalo_desde }}</div>
+                                    {% if form.intervalo_desde.errors %}
+                                        <div class="mt-1 text-red-600 text-sm">
+                                            {% for error in form.intervalo_desde.errors %}
+                                                <p>{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        Hora de inicio del descanso
+                                    </p>
+                                </div>
+
+                                <!-- Intervalo Hasta -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <i class="fas fa-play text-orange-500 mr-1"></i>
+                                        {{ form.intervalo_hasta.label }}
+                                    </label>
+                                    <div class="relative">{{ form.intervalo_hasta }}</div>
+                                    {% if form.intervalo_hasta.errors %}
+                                        <div class="mt-1 text-red-600 text-sm">
+                                            {% for error in form.intervalo_hasta.errors %}
+                                                <p>{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        Hora de fin del descanso
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 p-3 bg-orange-100 dark:bg-orange-800 rounded-md">
+                                <p class="text-sm text-orange-700 dark:text-orange-200">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <strong>Nota:</strong> El intervalo de descanso debe estar dentro del horario principal de atención. Durante este período no se programarán citas médicas.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Sección de Horarios Preconfigurados (ayuda visual) -->
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                                <i class="fas fa-lightbulb text-yellow-500 mr-1"></i>
+                                Horarios preconfigurados comunes:
+                            </h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                <button type="button" onclick="setHorario('08:00', '17:00', '12:00', '13:00')" class="px-3 py-2 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200 text-left">
+                                    <div class="font-semibold">Mañana y Tarde</div>
+                                    <div class="text-gray-500">08:00 - 17:00</div>
+                                    <div class="text-orange-500 text-xs">Pausa: 12:00 - 13:00</div>
+                                </button>
+                                <button type="button" onclick="setHorario('08:00', '12:00', '', '')" class="px-3 py-2 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200 text-left">
+                                    <div class="font-semibold">Solo Mañana</div>
+                                    <div class="text-gray-500">08:00 - 12:00</div>
+                                    <div class="text-gray-400 text-xs">Sin pausa</div>
+                                </button>
+                                <button type="button" onclick="setHorario('14:00', '18:00', '', '')" class="px-3 py-2 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200 text-left">
+                                    <div class="font-semibold">Solo Tarde</div>
+                                    <div class="text-gray-500">14:00 - 18:00</div>
+                                    <div class="text-gray-400 text-xs">Sin pausa</div>
+                                </button>
+                                <button type="button" onclick="setHorario('07:00', '19:00', '12:00', '14:00')" class="px-3 py-2 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200 text-left">
+                                    <div class="font-semibold">Jornada Extendida</div>
+                                    <div class="text-gray-500">07:00 - 19:00</div>
+                                    <div class="text-orange-500 text-xs">Pausa: 12:00 - 14:00</div>
+                                </button>
+                                <button type="button" onclick="setHorario('06:00', '14:00', '10:00', '10:30')" class="px-3 py-2 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200 text-left">
+                                    <div class="font-semibold">Turno Temprano</div>
+                                    <div class="text-gray-500">06:00 - 14:00</div>
+                                    <div class="text-orange-500 text-xs">Pausa: 10:00 - 10:30</div>
+                                </button>
+                                <button type="button" onclick="setHorario('22:00', '06:00', '02:00', '02:30')" class="px-3 py-2 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:border-blue-300 dark:hover:border-blue-600 transition-colors duration-200 text-left">
+                                    <div class="font-semibold">Turno Nocturno</div>
+                                    <div class="text-gray-500">22:00 - 06:00</div>
+                                    <div class="text-orange-500 text-xs">Pausa: 02:00 - 02:30</div>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                Haz clic en cualquier horario para aplicarlo automáticamente
+                            </p>
+                        </div>
+
+                        <!-- Información adicional -->
+                        {% if object %}
+                            <div class="bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-400 p-4 mt-6">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-info-circle text-blue-400"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-blue-700 dark:text-blue-200">
+                                            <strong>Información:</strong> Este horario está siendo utilizado por
+                                            <strong>{{ object.doctores.count }} doctor(es)</strong>.
+                                            {% if object.doctores.count > 0 %}
+                                                Ten cuidado al modificar esta información.
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Errores no específicos de campo -->
+                        {% if form.non_field_errors %}
+                            <div class="bg-red-50 dark:bg-red-900 border-l-4 border-red-400 p-4 mt-6">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-exclamation-triangle text-red-400"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        {% for error in form.non_field_errors %}
+                                            <p class="text-sm text-red-700 dark:text-red-200">
+                                                {{ error }}
+                                            </p>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 sticky bottom-0 z-10">
+                    <div class="flex flex-col sm:flex-row justify-end items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                        <a href="{{ back_url }}" class="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+                            <i class="fas fa-times mr-2"></i>
+                            Cancelar
+                        </a>
+                        <button type="submit" id="submitBtn" class="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 shadow-sm">
+                            <i class="fas fa-save mr-2"></i>
+                            {% if object %}
+                                Actualizar Horario de Atención
+                            {% else %}
+                                Crear Horario de Atención
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+    </form>
+  </div>
+</div>
+
+<!-- JavaScript para interactividad -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Referencias a elementos
+    const diaSelect = document.getElementById("id_dia_semana");
+    const horaInicioInput = document.getElementById("id_hora_inicio");
+    const horaFinInput = document.getElementById("id_hora_fin");
+    const intervaloDesdeInput = document.getElementById("id_intervalo_desde");
+    const intervaloHastaInput = document.getElementById("id_intervalo_hasta");
+    const toggleIntervalo = document.getElementById("toggleIntervalo");
+    const intervaloSection = document.getElementById("intervaloSection");
+    const diaPreview = document.getElementById("diaPreview");
+    const horaPreview = document.getElementById("horaPreview");
+
+    // Actualizar vista previa
+    function updatePreview() {
+      // Actualizar día
+      if (diaSelect.value) {
+        const selectedOption = diaSelect.options[diaSelect.selectedIndex];
+        diaPreview.textContent = selectedOption.text;
+      } else {
+        diaPreview.textContent = "--";
+      }
+
+      // Actualizar horario
+      const horaInicio = horaInicioInput.value || "--:--";
+      const horaFin = horaFinInput.value || "--:--";
+      horaPreview.textContent = `${horaInicio} - ${horaFin}`;
+    }
+
+    // Event listeners para actualizar preview
+    if (diaSelect) diaSelect.addEventListener("change", updatePreview);
+    if (horaInicioInput)
+      horaInicioInput.addEventListener("input", updatePreview);
+    if (horaFinInput) horaFinInput.addEventListener("input", updatePreview);
+
+    // Toggle para intervalo de descanso
+    if (toggleIntervalo && intervaloSection) {
+      // Verificar si hay valores iniciales de intervalo
+      const hasInitialIntervalo =
+        intervaloDesdeInput.value || intervaloHastaInput.value;
+      if (hasInitialIntervalo) {
+        toggleIntervalo.checked = true;
+      } else {
+        intervaloSection.style.display = "none";
+      }
+
+      toggleIntervalo.addEventListener("change", function () {
+        if (this.checked) {
+          intervaloSection.style.display = "grid";
+          // Establecer valores por defecto si están vacíos
+          if (!intervaloDesdeInput.value) intervaloDesdeInput.value = "12:00";
+          if (!intervaloHastaInput.value) intervaloHastaInput.value = "13:00";
+        } else {
+          intervaloSection.style.display = "none";
+          // Limpiar valores
+          intervaloDesdeInput.value = "";
+          intervaloHastaInput.value = "";
+        }
+      });
+    }
+
+    // Función para validación en tiempo real
+    function validateHorarios() {
+      const horaInicio = horaInicioInput.value;
+      const horaFin = horaFinInput.value;
+      const intervaloDesde = intervaloDesdeInput.value;
+      const intervaloHasta = intervaloHastaInput.value;
+
+      // Limpiar errores previos
+      clearCustomErrors();
+
+      let hasErrors = false;
+
+      // Validar horario principal
+      if (horaInicio && horaFin && horaFin <= horaInicio) {
+        showCustomError(
+          horaFinInput,
+          "La hora de fin debe ser posterior a la hora de inicio."
+        );
+        hasErrors = true;
+      }
+
+      // Validar intervalo
+      if (intervaloDesde && intervaloHasta) {
+        if (intervaloHasta <= intervaloDesde) {
+          showCustomError(
+            intervaloHastaInput,
+            "La hora de fin del intervalo debe ser posterior al inicio."
+          );
+          hasErrors = true;
+        }
+
+        // Validar que el intervalo esté dentro del horario principal
+        if (
+          horaInicio &&
+          horaFin &&
+          (intervaloDesde < horaInicio || intervaloHasta > horaFin)
+        ) {
+          showCustomError(
+            intervaloDesdeInput,
+            "El intervalo debe estar dentro del horario de trabajo."
+          );
+          hasErrors = true;
+        }
+      }
+
+      return !hasErrors;
+    }
+
+    // Funciones auxiliares para manejo de errores
+    function showCustomError(input, message) {
+      const errorDiv = document.createElement("div");
+      errorDiv.className = "mt-1 text-red-600 text-sm custom-error";
+      errorDiv.innerHTML = `<p>${message}</p>`;
+      input.parentNode.appendChild(errorDiv);
+      input.classList.add("border-red-500");
+    }
+
+    function clearCustomErrors() {
+      document
+        .querySelectorAll(".custom-error")
+        .forEach((error) => error.remove());
+      document.querySelectorAll(".border-red-500").forEach((input) => {
+        input.classList.remove("border-red-500");
+        input.classList.add("border-gray-300");
+      });
+    }
+
+    // Validar al cambiar valores
+    [
+      horaInicioInput,
+      horaFinInput,
+      intervaloDesdeInput,
+      intervaloHastaInput,
+    ].forEach((input) => {
+      if (input) {
+        input.addEventListener("blur", validateHorarios);
+      }
+    });
+
+    // Validar antes de enviar
+    const form = document.getElementById("horarioAtencionForm");
+    if (form) {
+      form.addEventListener("submit", function (e) {
+        if (!validateHorarios()) {
+          e.preventDefault();
+          alert(
+            "Por favor, corrija los errores en el formulario antes de continuar."
+          );
+        }
+      });
+    }
+
+    // Llamar actualización inicial
+    updatePreview();
+  });
+
+  // Función global para establecer horarios preconfigurados
+  function setHorario(inicio, fin, intervaloDesde, intervaloHasta) {
+    document.getElementById("id_hora_inicio").value = inicio;
+    document.getElementById("id_hora_fin").value = fin;
+
+    const toggleIntervalo = document.getElementById("toggleIntervalo");
+    const intervaloSection = document.getElementById("intervaloSection");
+
+    if (intervaloDesde && intervaloHasta) {
+      document.getElementById("id_intervalo_desde").value = intervaloDesde;
+      document.getElementById("id_intervalo_hasta").value = intervaloHasta;
+      if (toggleIntervalo) {
+        toggleIntervalo.checked = true;
+        if (intervaloSection) intervaloSection.style.display = "grid";
+      }
+    } else {
+      document.getElementById("id_intervalo_desde").value = "";
+      document.getElementById("id_intervalo_hasta").value = "";
+      if (toggleIntervalo) {
+        toggleIntervalo.checked = false;
+        if (intervaloSection) intervaloSection.style.display = "none";
+      }
+    }
+
+    // Actualizar preview
+    const horaPreview = document.getElementById("horaPreview");
+    if (horaPreview) {
+      horaPreview.textContent = `${inicio} - ${fin}`;
+    }
+  }
+</script>
+
+<style>
+  /* Estilos adicionales para mejorar la responsividad */
+  @media (max-height: 600px) {
+    .container {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+  }
+
+  /* Mejorar contraste en modo oscuro */
+  .dark .bg-blue-50 {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+
+  .dark .bg-orange-50 {
+    background-color: rgba(251, 146, 60, 0.1);
+  }
+
+  /* Animaciones suaves */
+  .transition-all {
+    transition: all 0.3s ease-in-out;
+  }
+
+  /* Efectos hover mejorados */
+  button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Estilos para campos de tiempo */
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    background: transparent;
+    bottom: 0;
+    color: transparent;
+    cursor: pointer;
+    height: auto;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: auto;
+  }
+</style>
+
+{% endblock %}

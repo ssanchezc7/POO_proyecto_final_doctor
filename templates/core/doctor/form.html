@@ -1,0 +1,716 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  {% if object %}
+    Editar Doctor
+  {% else %}
+    Nuevo Doctor
+  {% endif %}
+  - SaludTotal
+{% endblock %}
+
+{% block content %}
+  {% load static %}
+
+  <!-- Contenedor principal con altura controlada -->
+  <div class="min-h-screen bg-gray-50 dark:bg-white-900">
+    <div class="w-full px-6 py-8">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-green-500 to-blue-600 text-white p-6 sm:p-8 rounded-lg shadow-lg mb-8">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+          <div class="flex-1">
+            <h1 class="text-2xl sm:text-3xl font-bold">
+              <i class="fas fa-{% if object %}edit{% else %}plus{% endif %} mr-2"></i>
+              {% if object %}
+                Editar Doctor
+              {% else %}
+                Nuevo Doctor
+              {% endif %}
+            </h1>
+            <p class="text-green-100 mt-1 text-sm sm:text-base">
+              {% if object %}
+                Modifica la información del doctor "{{ object.nombre_completo }}"
+              {% else %}
+                Registra un nuevo doctor en el sistema médico
+              {% endif %}
+            </p>
+          </div>
+          <div class="text-right mt-4 sm:mt-0">
+            <div class="text-xl sm:text-2xl font-bold">
+              <i class="fas fa-user-md"></i>
+            </div>
+            <div class="text-xs sm:text-sm text-green-100">Personal Médico</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenedor de mensajes dinámicos -->
+      <div id="messagesContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4 hidden"></div>
+
+      <!-- Formulario -->
+      <form method="post" enctype="multipart/form-data" class="space-y-6" id="doctorForm">
+        {% csrf_token %}
+
+        <!-- Contenedor principal del formulario -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+          <!-- Vista previa del doctor -->
+          <div class="bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-6 border-b border-gray-200 dark:border-gray-600">
+            <div class="text-center">
+              <div class="relative mx-auto mb-4">
+                <!-- Contenedor de la foto clickeable -->
+                <div class="relative w-20 sm:w-24 h-20 sm:h-24 mx-auto rounded-full overflow-hidden shadow-lg border-4 border-white dark:border-gray-800 bg-white dark:bg-gray-800 transition-all duration-200 hover:shadow-xl cursor-pointer"
+                     onclick="openPhotoModal()"
+                     id="photoPreview">
+                  {% if object and object.foto %}
+                    <img src="{{ object.foto.url }}"
+                         alt="{{ object.nombre_completo }}"
+                         class="w-full h-full object-cover"
+                         id="previewImage" />
+                    <!-- Overlay para indicar que es clickeable -->
+                    <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                      <i class="fas fa-search-plus text-white opacity-0 hover:opacity-100 transition-opacity duration-200 text-lg"></i>
+                    </div>
+                  {% else %}
+                    <div class="w-full h-full flex items-center justify-center">
+                      <i class="fas fa-user-md text-3xl sm:text-4xl text-green-600 dark:text-green-400"></i>
+                    </div>
+                    <!-- Indicador de sin foto -->
+                    <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center">
+                      <i class="fas fa-camera text-white opacity-0 hover:opacity-60 transition-opacity duration-200 text-sm"></i>
+                    </div>
+                  {% endif %}
+                </div>
+
+                <!-- Nombre visible debajo de la foto -->
+                <div class="mt-3">
+                  <div class="text-sm font-bold text-green-600 dark:text-green-400" id="nombrePreviewStatic">
+                    {% if object %}
+                      {{ object.nombre_completo|truncatechars:20 }}
+                    {% else %}
+                      Nuevo Doctor
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                Vista previa del doctor
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                El nombre se actualizará mientras escribes • Haz clic en la foto para ampliar
+              </p>
+            </div>
+          </div>
+
+          <!-- Campos del formulario -->
+          <div class="p-4 sm:p-6">
+            <!-- Información Personal -->
+            <div class="mb-8">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                <i class="fas fa-user mr-2 text-green-500"></i>
+                Información Personal
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <!-- Campo Nombres -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-user text-green-500 mr-1"></i>
+                    {{ form.nombres.label }}
+                    <span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <div class="relative">{{ form.nombres }}</div>
+                  {% if form.nombres.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.nombres.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                <!-- Campo Apellidos -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-user text-green-500 mr-1"></i>
+                    {{ form.apellidos.label }}
+                    <span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <div class="relative">{{ form.apellidos }}</div>
+                  {% if form.apellidos.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.apellidos.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                <!-- Campo RUC -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-id-card text-green-500 mr-1"></i>
+                    {{ form.ruc.label }}
+                    <span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <div class="relative">{{ form.ruc }}</div>
+                  {% if form.ruc.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.ruc.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    13 dígitos para RUC válido
+                  </p>
+                </div>
+
+                <!-- Campo Fecha de Nacimiento -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-birthday-cake text-green-500 mr-1"></i>
+                    {{ form.fecha_nacimiento.label }}
+                    <span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <div class="relative">{{ form.fecha_nacimiento }}</div>
+                  {% if form.fecha_nacimiento.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.fecha_nacimiento.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Debe ser mayor de 18 años
+                  </p>
+                </div>
+
+                <!-- Campo Código Único -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-hashtag text-green-500 mr-1"></i>
+                    {{ form.codigo_unico_doctor.label }}
+                    <span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <div class="relative">{{ form.codigo_unico_doctor }}</div>
+                  {% if form.codigo_unico_doctor.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.codigo_unico_doctor.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Identificador único del doctor
+                  </p>
+                </div>
+
+                <!-- Campo Foto -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-image text-green-500 mr-1"></i>
+                    {{ form.foto.label }}
+                  </label>
+                  <div class="relative">{{ form.foto }}</div>
+                  {% if form.foto.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.foto.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Foto del doctor (opcional)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Información Profesional -->
+            <div class="mb-8">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                <i class="fas fa-stethoscope mr-2 text-blue-500"></i>
+                Información Profesional
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <!-- Campo Especialidades -->
+                <div class="lg:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-stethoscope text-blue-500 mr-1"></i>
+                    {{ form.especialidad.label }}
+                    <span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <div class="relative">{{ form.especialidad }}</div>
+                  {% if form.especialidad.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.especialidad.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    {% if form.especialidad.field.queryset.count > 0 %}
+                      Seleccione una o más especialidades médicas ({{ form.especialidad.field.queryset.count }} disponibles)
+                    {% else %}
+                      ⚠️ No hay especialidades disponibles. Contacte al administrador para crear especialidades.
+                    {% endif %}
+                  </p>
+                </div>
+
+                <!-- Campo Horario de Atención -->
+                <div class="lg:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-calendar-alt text-blue-500 mr-1"></i>
+                    Horario de Atención
+                    <span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <div class="relative">{{ form.horarios_atencion }}</div>
+                  {% if form.horarios_atencion.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.horarios_atencion.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    {% if form.horarios_atencion.field.queryset.count > 0 %}
+                      Seleccione uno o más horarios de atención ({{ form.horarios_atencion.field.queryset.count }} disponibles).
+                      Mantén presionado Ctrl/Cmd para seleccionar múltiples opciones.
+                    {% else %}
+                      ⚠️ No hay horarios disponibles. Contacte al administrador para crear horarios.
+                    {% endif %}
+                  </p>
+                </div>
+
+                <!-- Campo Teléfonos -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-phone text-blue-500 mr-1"></i>
+                    {{ form.telefonos.label }}
+                    <span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <div class="relative">{{ form.telefonos }}</div>
+                  {% if form.telefonos.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.telefonos.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                <!-- Campo Email -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-envelope text-blue-500 mr-1"></i>
+                    {{ form.email.label }}
+                    <span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <div class="relative">{{ form.email }}</div>
+                  {% if form.email.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.email.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Se enviará cuenta de usuario a este correo
+                  </p>
+                </div>
+
+                <!-- Campo Duración de Atención -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-hourglass-half text-blue-500 mr-1"></i>
+                    {{ form.duracion_atencion.label }}
+                    <span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <div class="relative">{{ form.duracion_atencion }}</div>
+                  {% if form.duracion_atencion.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.duracion_atencion.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Tiempo por consulta en minutos (15-180)
+                  </p>
+                </div>
+
+                <!-- Campo Activo -->
+                <div class="flex items-center">
+                  <div class="flex items-center">
+                    {{ form.activo }}
+                    <label for="id_activo" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                      <i class="fas fa-toggle-on text-blue-500 mr-1"></i>
+                      {{ form.activo.label }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Información de Ubicación -->
+            <div class="mb-8">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                <i class="fas fa-map-marker-alt mr-2 text-purple-500"></i>
+                Información de Ubicación
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <!-- Campo Dirección -->
+                <div class="lg:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-map-marker-alt text-purple-500 mr-1"></i>
+                    {{ form.direccion.label }}
+                    <span class="text-red-500 ml-1">*</span>
+                  </label>
+                  <div class="relative">{{ form.direccion }}</div>
+                  {% if form.direccion.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.direccion.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Dirección del consultorio o lugar de trabajo
+                  </p>
+                </div>
+
+                <!-- Campo Latitud -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-globe text-purple-500 mr-1"></i>
+                    {{ form.latitud.label }}
+                  </label>
+                  <div class="relative">{{ form.latitud }}</div>
+                  {% if form.latitud.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.latitud.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Coordenada GPS (opcional)
+                  </p>
+                </div>
+
+                <!-- Campo Longitud -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-globe text-purple-500 mr-1"></i>
+                    {{ form.longitud.label }}
+                  </label>
+                  <div class="relative">{{ form.longitud }}</div>
+                  {% if form.longitud.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.longitud.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Coordenada GPS (opcional)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Archivos Adicionales -->
+            <div class="mb-8">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                <i class="fas fa-file-alt mr-2 text-orange-500"></i>
+                Archivos Adicionales
+              </h3>
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <!-- Campo Currículum -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-file-pdf text-orange-500 mr-1"></i>
+                    {{ form.curriculum.label }}
+                  </label>
+                  <div class="relative">{{ form.curriculum }}</div>
+                  {% if form.curriculum.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.curriculum.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Archivo PDF o DOC (opcional)
+                  </p>
+                </div>
+
+                <!-- Campo Firma Digital -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-signature text-orange-500 mr-1"></i>
+                    {{ form.firma_digital.label }}
+                  </label>
+                  <div class="relative">{{ form.firma_digital }}</div>
+                  {% if form.firma_digital.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.firma_digital.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Imagen para firmar documentos (opcional)
+                  </p>
+                </div>
+
+                <!-- Campo Imagen Receta -->
+                <div class="lg:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-prescription text-orange-500 mr-1"></i>
+                    {{ form.imagen_receta.label }}
+                  </label>
+                  <div class="relative">{{ form.imagen_receta }}</div>
+                  {% if form.imagen_receta.errors %}
+                    <div class="mt-1 text-red-600 text-sm">
+                      {% for error in form.imagen_receta.errors %}
+                        <p>{{ error }}</p>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Encabezado o logo para recetas médicas (opcional)
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de acción fijos -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 sticky bottom-0 z-10">
+          <div class="flex flex-col sm:flex-row justify-end items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+            <a href="{{ back_url }}"
+               class="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+              <i class="fas fa-times mr-2"></i>
+              Cancelar
+            </a>
+            <button type="submit"
+                    id="submitBtn"
+                    class="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 shadow-sm">
+              <i class="fas fa-save mr-2"></i>
+              {{ grabar }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para ver la foto ampliada -->
+  <div id="photoModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden items-center justify-center p-4">
+    <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-95"
+         id="modalContent">
+      <!-- Header del modal -->
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+          <i class="fas fa-image mr-2 text-green-500"></i>
+          Foto del Doctor
+        </h3>
+        <button onclick="closePhotoModal()"
+                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Contenido del modal -->
+      <div class="p-6 text-center">
+        <div class="mb-4">
+          <div class="w-48 h-48 mx-auto rounded-lg overflow-hidden shadow-lg bg-gray-100 dark:bg-gray-700">
+            <img id="modalImage"
+                 src=""
+                 alt=""
+                 class="w-full h-full object-cover"
+                 style="display: none" />
+            <div id="modalPlaceholder" class="w-full h-full flex items-center justify-center">
+              <div class="text-center">
+                <i class="fas fa-user-md text-6xl text-gray-400 mb-2"></i>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Sin foto</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center">
+          <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-1" id="modalDoctorName">
+            {% if object %}
+              {{ object.nombre_completo }}
+            {% else %}
+              Nuevo Doctor
+            {% endif %}
+          </h4>
+          <p class="text-sm text-gray-500 dark:text-gray-400" id="modalDoctorInfo">
+            {% if object and object.especialidad.all %}
+              {% for especialidad in object.especialidad.all|slice:":2" %}
+                {{ especialidad.nombre }}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            {% else %}
+              Vista previa
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- Footer del modal -->
+      <div class="px-6 pb-4">
+        <button onclick="closePhotoModal()"
+                class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+          <i class="fas fa-check mr-2"></i>
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{% static 'js/messages.js' %}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Actualizar vista previa del nombre
+      const nombresInput = document.getElementById("id_nombres");
+      const apellidosInput = document.getElementById("id_apellidos");
+      const nombrePreviewStatic = document.getElementById("nombrePreviewStatic");
+
+      function updateNombrePreview() {
+        const nombres = nombresInput.value.trim();
+        const apellidos = apellidosInput.value.trim();
+
+        if (nombres || apellidos) {
+          const nombreCompleto = `${apellidos} ${nombres}`.trim();
+          const nombreMedio = nombreCompleto.substring(0, 20) + (nombreCompleto.length > 20 ? "..." : "");
+
+          // Actualizar vista previa
+          nombrePreviewStatic.textContent = nombreMedio;
+
+          // Actualizar modal si está abierto
+          const modalDoctorName = document.getElementById("modalDoctorName");
+          if (modalDoctorName) {
+            modalDoctorName.textContent = nombreCompleto || "Nuevo Doctor";
+          }
+        } else {
+          nombrePreviewStatic.textContent = "Nuevo Doctor";
+          const modalDoctorName = document.getElementById("modalDoctorName");
+          if (modalDoctorName) {
+            modalDoctorName.textContent = "Nuevo Doctor";
+          }
+        }
+      }
+
+      if (nombresInput) {
+        nombresInput.addEventListener("input", updateNombrePreview);
+      }
+      if (apellidosInput) {
+        apellidosInput.addEventListener("input", updateNombrePreview);
+      }
+
+      // Manejar cambio de foto
+      const fotoInput = document.getElementById("id_foto");
+      if (fotoInput) {
+        fotoInput.addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          const previewImage = document.getElementById("previewImage");
+          const photoPreview = document.getElementById("photoPreview");
+
+          if (file && file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              if (previewImage) {
+                previewImage.src = e.target.result;
+                previewImage.style.display = "block";
+              } else {
+                // Crear nueva imagen si no existe
+                const newImg = document.createElement("img");
+                newImg.src = e.target.result;
+                newImg.alt = "Vista previa";
+                newImg.className = "w-full h-full object-cover";
+                newImg.id = "previewImage";
+
+                // Limpiar contenido anterior y agregar nueva imagen
+                photoPreview.innerHTML = "";
+                photoPreview.appendChild(newImg);
+              }
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+    });
+
+    // Funciones para el modal de foto
+    function openPhotoModal() {
+      const modal = document.getElementById("photoModal");
+      const modalImage = document.getElementById("modalImage");
+      const modalPlaceholder = document.getElementById("modalPlaceholder");
+      const previewImage = document.getElementById("previewImage");
+
+      if (previewImage && previewImage.src && previewImage.style.display !== "none") {
+        modalImage.src = previewImage.src;
+        modalImage.style.display = "block";
+        modalPlaceholder.style.display = "none";
+      } else {
+        modalImage.style.display = "none";
+        modalPlaceholder.style.display = "flex";
+      }
+
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+
+      setTimeout(() => {
+        const modalContent = document.getElementById("modalContent");
+        modalContent.classList.remove("scale-95");
+        modalContent.classList.add("scale-100");
+      }, 10);
+    }
+
+    function closePhotoModal() {
+      const modal = document.getElementById("photoModal");
+      const modalContent = document.getElementById("modalContent");
+
+      modalContent.classList.remove("scale-100");
+      modalContent.classList.add("scale-95");
+
+      setTimeout(() => {
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }, 300);
+    }
+
+    // Cerrar modal con ESC
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        closePhotoModal();
+      }
+    });
+
+    // Cerrar modal al hacer clic fuera
+    document.getElementById("photoModal").addEventListener("click", function (event) {
+      if (event.target === this) {
+        closePhotoModal();
+      }
+    });
+  </script>
+{% endblock %}

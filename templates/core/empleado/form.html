@@ -1,0 +1,812 @@
+{% extends 'base.html' %}
+{% block title %}
+    {% if object %}
+        Editar Empleado
+    {% else %}
+        Nuevo Empleado
+    {% endif %} - SaludTotal
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<!-- Contenedor principal con altura controlada -->
+<div class="min-h-screen bg-gray-50 dark:bg-white-900">
+    <div class="w-full px-6 py-8">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 sm:p-8 rounded-lg shadow-lg mb-8">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                <div class="flex-1">
+                    <h1 class="text-2xl sm:text-3xl font-bold">
+                        <i class="fas fa-{% if object %}edit{% else %}plus{% endif %} mr-2"></i>
+                        {% if object %}
+                            Editar Empleado
+                        {% else %}
+                            Nuevo Empleado
+                        {% endif %}
+                    </h1>
+                    <p class="text-green-100 mt-1 text-sm sm:text-base">
+                        {% if object %}
+                            Modifica la información del empleado "{{ object.nombre_completo }}"
+                        {% else %}
+                            Registra un nuevo empleado en el sistema
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="text-right mt-4 sm:mt-0">
+                    <div class="text-xl sm:text-2xl font-bold">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="text-xs sm:text-sm text-green-100">Personal</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor de mensajes dinámicos -->
+        <div id="messagesContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4 hidden"></div>
+
+        <!-- Formulario -->
+        <form method="post" enctype="multipart/form-data" class="space-y-6" id="empleadoForm">
+            {% csrf_token %}
+
+            <!-- Contenedor principal del formulario -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+                <!-- Vista previa del empleado -->
+                <div class="bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-6 border-b border-gray-200 dark:border-gray-600">
+                    <div class="text-center">
+                        <div class="relative mx-auto mb-4">
+                            <!-- Contenedor de la foto clickeable -->
+                            <div class="relative w-20 sm:w-24 h-20 sm:h-24 mx-auto rounded-full overflow-hidden shadow-lg border-4 border-white dark:border-gray-800 bg-white dark:bg-gray-800 transition-all duration-200 hover:shadow-xl cursor-pointer"
+                                 onclick="openPhotoModal()" id="photoPreview">
+                                {% if object and object.foto %}
+                                    <img src="{{ object.foto.url }}" alt="{{ object.nombre_completo }}"
+                                         class="w-full h-full object-cover" id="previewImage" />
+                                    <!-- Overlay para indicar que es clickeable -->
+                                    <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                                        <i class="fas fa-search-plus text-white opacity-0 hover:opacity-100 transition-opacity duration-200 text-lg"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="w-full h-full flex items-center justify-center">
+                                        <i class="fas fa-user text-3xl sm:text-4xl text-blue-600 dark:text-blue-400"></i>
+                                    </div>
+                                    <!-- Indicador de sin foto -->
+                                    <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center">
+                                        <i class="fas fa-camera text-white opacity-0 hover:opacity-60 transition-opacity duration-200 text-sm"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Nombre visible debajo de la foto -->
+                            <div class="mt-3">
+                                <div class="text-sm font-bold text-blue-600 dark:text-blue-400" id="nombrePreviewStatic">
+                                    {% if object %}
+                                        {{ object.nombre_completo|truncatechars:20 }}
+                                    {% else %}
+                                        Nuevo Empleado
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                            Vista previa del empleado
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            El nombre se actualizará mientras escribes • Haz clic en la foto para ampliar
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Campos del formulario -->
+                <div class="p-4 sm:p-6">
+                    <!-- Información Personal -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                            <i class="fas fa-user mr-2 text-blue-500"></i>
+                            Información Personal
+                        </h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                            <!-- Campo Nombres -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-user text-blue-500 mr-1"></i>
+                                    {{ form.nombres.label }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">{{ form.nombres }}</div>
+                                {% if form.nombres.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.nombres.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Campo Apellidos -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-user text-blue-500 mr-1"></i>
+                                    {{ form.apellidos.label }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">{{ form.apellidos }}</div>
+                                {% if form.apellidos.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.apellidos.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Campo Cédula -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-id-card text-blue-500 mr-1"></i>
+                                    {{ form.cedula_ecuatoriana.label }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">{{ form.cedula_ecuatoriana }}</div>
+                                {% if form.cedula_ecuatoriana.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.cedula_ecuatoriana.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    10 dígitos sin espacios ni guiones
+                                </p>
+                            </div>
+
+                            <!-- Campo DNI -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-passport text-blue-500 mr-1"></i>
+                                    {{ form.dni.label }}
+                                </label>
+                                <div class="relative">{{ form.dni }}</div>
+                                {% if form.dni.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.dni.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Documento internacional (opcional)
+                                </p>
+                            </div>
+
+                            <!-- Campo Fecha de Nacimiento -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-birthday-cake text-blue-500 mr-1"></i>
+                                    {{ form.fecha_nacimiento.label }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">{{ form.fecha_nacimiento }}</div>
+                                {% if form.fecha_nacimiento.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.fecha_nacimiento.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {% if object %}
+                                        No se permiten fechas futuras. Edad mínima: 18 años
+                                    {% else %}
+                                        No se permiten fechas futuras. Edad mínima: 18 años
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <!-- Campo Foto -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-image text-blue-500 mr-1"></i>
+                                    {{ form.foto.label }}
+                                </label>
+                                <div class="relative">{{ form.foto }}</div>
+                                {% if form.foto.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.foto.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Imagen del empleado (opcional)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información Laboral -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                            <i class="fas fa-briefcase mr-2 text-green-500"></i>
+                            Información Laboral
+                        </h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                            <!-- Campo Cargo -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-briefcase text-green-500 mr-1"></i>
+                                    {{ form.cargo.label }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">{{ form.cargo }}</div>
+                                {% if form.cargo.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.cargo.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Campo Sueldo -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-dollar-sign text-green-500 mr-1"></i>
+                                    {{ form.sueldo.label }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">{{ form.sueldo }}</div>
+                                {% if form.sueldo.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.sueldo.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Salario mensual en dólares
+                                </p>
+                            </div>
+
+                            <!-- Campo Fecha de Ingreso -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-calendar-plus text-green-500 mr-1"></i>
+                                    {{ form.fecha_ingreso.label }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">{{ form.fecha_ingreso }}</div>
+                                {% if form.fecha_ingreso.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.fecha_ingreso.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {% if object %}
+                                        Fecha de ingreso del empleado (se permite modificar)
+                                    {% else %}
+                                        No se permiten fechas pasadas. Mínimo desde hoy
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <!-- Campo Activo -->
+                            <div class="flex items-center">
+                                <div class="flex items-center">
+                                    {{ form.activo }}
+                                    <label for="id_activo" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                                        <i class="fas fa-toggle-on text-green-500 mr-1"></i>
+                                        {{ form.activo.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información de Ubicación -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2 text-purple-500"></i>
+                            Información de Ubicación
+                        </h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                            <!-- Campo Dirección -->
+                            <div class="lg:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-map-marker-alt text-purple-500 mr-1"></i>
+                                    {{ form.direccion.label }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">{{ form.direccion }}</div>
+                                {% if form.direccion.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.direccion.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Campo Latitud -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-globe text-purple-500 mr-1"></i>
+                                    {{ form.latitud.label }}
+                                </label>
+                                <div class="relative">{{ form.latitud }}</div>
+                                {% if form.latitud.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.latitud.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Coordenada GPS (opcional)
+                                </p>
+                            </div>
+
+                            <!-- Campo Longitud -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-globe text-purple-500 mr-1"></i>
+                                    {{ form.longitud.label }}
+                                </label>
+                                <div class="relative">{{ form.longitud }}</div>
+                                {% if form.longitud.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.longitud.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Coordenada GPS (opcional)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de acción fijos -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 sticky bottom-0 z-10">
+                <div class="flex flex-col sm:flex-row justify-end items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                    <a href="{{ back_url }}"
+                       class="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                        <i class="fas fa-times mr-2"></i>
+                        Cancelar
+                    </a>
+                    <button type="submit" id="submitBtn"
+                            class="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 shadow-sm">
+                        <i class="fas fa-save mr-2"></i>
+                        {{ grabar }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para ver la foto ampliada -->
+<div id="photoModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden items-center justify-center p-4">
+    <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-95" id="modalContent">
+        <!-- Header del modal -->
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                <i class="fas fa-image mr-2 text-blue-500"></i>
+                Foto del Empleado
+            </h3>
+            <button onclick="closePhotoModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Contenido del modal -->
+        <div class="p-6 text-center">
+            <div class="mb-4">
+                <div class="w-48 h-48 mx-auto rounded-lg overflow-hidden shadow-lg bg-gray-100 dark:bg-gray-700">
+                    <img id="modalImage" src="" alt="" class="w-full h-full object-cover" style="display: none" />
+                    <div id="modalPlaceholder" class="w-full h-full flex items-center justify-center">
+                        <div class="text-center">
+                            <i class="fas fa-user text-6xl text-gray-400 mb-2"></i>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Sin foto</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-1" id="modalEmployeeName">
+                    {% if object %}
+                        {{ object.nombre_completo }}
+                    {% else %}
+                        Nuevo Empleado
+                    {% endif %}
+                </h4>
+                <p class="text-sm text-gray-500 dark:text-gray-400" id="modalEmployeeInfo">
+                    {% if object and object.cargo %}
+                        {{ object.cargo }}
+                    {% else %}
+                        Vista previa
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer del modal -->
+        <div class="px-6 pb-4">
+            <button onclick="closePhotoModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                <i class="fas fa-check mr-2"></i>
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="{% static 'js/messages.js' %}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Actualizar vista previa del nombre
+        const nombresInput = document.getElementById("id_nombres");
+        const apellidosInput = document.getElementById("id_apellidos");
+        const nombrePreviewStatic = document.getElementById("nombrePreviewStatic");
+
+        function updateNombrePreview() {
+            const nombres = nombresInput.value.trim();
+            const apellidos = apellidosInput.value.trim();
+
+            if (nombres || apellidos) {
+                const nombreCompleto = `${apellidos} ${nombres}`.trim();
+                const nombreMedio = nombreCompleto.substring(0, 20) + (nombreCompleto.length > 20 ? "..." : "");
+
+                // Actualizar vista previa
+                nombrePreviewStatic.textContent = nombreMedio;
+
+                // Actualizar modal si está abierto
+                const modalEmployeeName = document.getElementById("modalEmployeeName");
+                if (modalEmployeeName) {
+                    modalEmployeeName.textContent = nombreCompleto || "Nuevo Empleado";
+                }
+            } else {
+                nombrePreviewStatic.textContent = "Nuevo Empleado";
+                const modalEmployeeName = document.getElementById("modalEmployeeName");
+                if (modalEmployeeName) {
+                    modalEmployeeName.textContent = "Nuevo Empleado";
+                }
+            }
+        }
+
+        if (nombresInput) {
+            nombresInput.addEventListener("input", updateNombrePreview);
+        }
+        if (apellidosInput) {
+            apellidosInput.addEventListener("input", updateNombrePreview);
+        }
+
+        // Manejar cambio de foto
+        const fotoInput = document.getElementById("id_foto");
+        if (fotoInput) {
+            fotoInput.addEventListener("change", function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const previewImage = document.getElementById("previewImage");
+                        const photoPreview = document.getElementById("photoPreview");
+
+                        if (previewImage) {
+                            previewImage.src = e.target.result;
+                        } else {
+                            // Crear nueva imagen si no existe
+                            const newImg = document.createElement("img");
+                            newImg.id = "previewImage";
+                            newImg.src = e.target.result;
+                            newImg.alt = "Foto del empleado";
+                            newImg.className = "w-full h-full object-cover";
+
+                            // Reemplazar el contenido del contenedor
+                            photoPreview.innerHTML = `
+                                <img src="${e.target.result}" alt="Foto del empleado" class="w-full h-full object-cover" id="previewImage" />
+                                <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                                    <i class="fas fa-search-plus text-white opacity-0 hover:opacity-100 transition-opacity duration-200 text-lg"></i>
+                                </div>
+                            `;
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // Validación del formulario
+        const form = document.getElementById("empleadoForm");
+        if (form) {
+            // Validación de fechas
+            const fechaNacimientoInput = document.getElementById("id_fecha_nacimiento");
+            const fechaIngresoInput = document.getElementById("id_fecha_ingreso");
+
+            if (fechaNacimientoInput) {
+                fechaNacimientoInput.addEventListener("change", function () {
+                    const fechaNacimiento = new Date(this.value);
+                    const hoy = new Date();
+                    hoy.setHours(0, 0, 0, 0);
+
+                    if (fechaNacimiento >= hoy) {
+                        showMessage(
+                            "❌ La fecha de nacimiento no puede ser hoy o una fecha futura.",
+                            "error"
+                        );
+                        this.value = "";
+                        this.classList.add("border-red-500");
+                        this.focus();
+                        return;
+                    }
+
+                    // Verificar edad mínima (18 años)
+                    const fechaMinima = new Date();
+                    fechaMinima.setFullYear(fechaMinima.getFullYear() - 18);
+
+                    if (fechaNacimiento > fechaMinima) {
+                        showMessage(
+                            "⚠️ El empleado debe tener al menos 18 años de edad para trabajar.",
+                            "error"
+                        );
+                        this.value = "";
+                        this.classList.add("border-red-500");
+                        this.focus();
+                        return;
+                    }
+
+                    // Verificar edad máxima (80 años)
+                    const fechaMaxima = new Date();
+                    fechaMaxima.setFullYear(fechaMaxima.getFullYear() - 80);
+
+                    if (fechaNacimiento < fechaMaxima) {
+                        showMessage(
+                            "⚠️ La fecha de nacimiento no puede ser anterior a 80 años.",
+                            "warning"
+                        );
+                        this.value = "";
+                        this.classList.add("border-red-500");
+                        this.focus();
+                        return;
+                    }
+
+                    // Si la fecha es válida, remover el borde rojo
+                    this.classList.remove("border-red-500");
+                    showMessage("✅ Fecha de nacimiento válida.", "success");
+                });
+            }
+
+            if (fechaIngresoInput) {
+                fechaIngresoInput.addEventListener("change", function () {
+                    const fechaIngreso = new Date(this.value);
+                    const hoy = new Date();
+                    hoy.setHours(0, 0, 0, 0);
+
+                    // En modo edición, permitir fechas pasadas existentes
+                    const isEditing = {{ object|yesno:"true,false" }};
+
+                    if (!isEditing && fechaIngreso < hoy) {
+                        showMessage(
+                            "❌ La fecha de ingreso no puede ser anterior a hoy.",
+                            "error"
+                        );
+                        this.value = "";
+                        this.classList.add("border-red-500");
+                        this.focus();
+                        return;
+                    }
+
+                    // Verificar que no sea muy lejana en el futuro (máximo 1 año)
+                    const fechaMaxima = new Date();
+                    fechaMaxima.setFullYear(fechaMaxima.getFullYear() + 1);
+
+                    if (fechaIngreso > fechaMaxima) {
+                        showMessage(
+                            "⚠️ La fecha de ingreso no puede ser superior a un año en el futuro.",
+                            "warning"
+                        );
+                        this.value = "";
+                        this.classList.add("border-red-500");
+                        this.focus();
+                        return;
+                    }
+
+                    // Si la fecha es válida, remover el borde rojo
+                    this.classList.remove("border-red-500");
+                    showMessage("✅ Fecha de ingreso válida.", "success");
+                });
+            }
+
+            form.addEventListener("submit", function (e) {
+                const requiredFields = form.querySelectorAll("[required]");
+                let isValid = true;
+                let emptyFields = [];
+
+                requiredFields.forEach((field) => {
+                    if (!field.value.trim()) {
+                        isValid = false;
+                        field.classList.add("border-red-500");
+
+                        // Obtener el label del campo
+                        const label =
+                            form.querySelector(`label[for="${field.id}"]`) ||
+                            form.querySelector(
+                                `label[class*="block"]:has(+ div > #${field.id})`
+                            );
+                        if (label) {
+                            emptyFields.push(label.textContent.replace("*", "").trim());
+                        }
+                    } else {
+                        field.classList.remove("border-red-500");
+                    }
+                });
+
+                if (!isValid) {
+                    e.preventDefault();
+                    const fieldsList =
+                        emptyFields.length > 3
+                            ? emptyFields.slice(0, 3).join(", ") + "..."
+                            : emptyFields.join(", ");
+                    showMessage(
+                        `⚠️ Campos obligatorios faltantes: ${fieldsList}`,
+                        "warning"
+                    );
+
+                    // Hacer scroll al primer campo vacío
+                    const firstEmptyField = form.querySelector(
+                        "[required][value=''], [required]:not([value])"
+                    );
+                    if (firstEmptyField) {
+                        firstEmptyField.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                        });
+                        setTimeout(() => firstEmptyField.focus(), 500);
+                    }
+                    return false;
+                }
+
+                // Validación adicional de fechas antes del envío
+                if (fechaNacimientoInput && fechaNacimientoInput.value) {
+                    const fechaNacimiento = new Date(fechaNacimientoInput.value);
+                    const hoy = new Date();
+                    hoy.setHours(0, 0, 0, 0);
+
+                    if (fechaNacimiento >= hoy) {
+                        e.preventDefault();
+                        showMessage(
+                            "❌ La fecha de nacimiento no puede ser hoy o una fecha futura.",
+                            "error"
+                        );
+                        fechaNacimientoInput.focus();
+                        return false;
+                    }
+                }
+
+                if (fechaIngresoInput && fechaIngresoInput.value) {
+                    const fechaIngreso = new Date(fechaIngresoInput.value);
+                    const hoy = new Date();
+                    hoy.setHours(0, 0, 0, 0);
+
+                    // En modo edición, permitir fechas pasadas existentes
+                    const isEditing = {{ object|yesno:"true,false" }};
+
+                    if (!isEditing && fechaIngreso < hoy) {
+                        e.preventDefault();
+                        showMessage(
+                            "❌ La fecha de ingreso no puede ser anterior a hoy.",
+                            "error"
+                        );
+                        fechaIngresoInput.focus();
+                        return false;
+                    }
+                }
+
+                // Si todo está bien, mostrar mensaje de procesamiento
+                showMessage("📋 Guardando información del empleado...", "info");
+
+                // Deshabilitar el botón para evitar doble envío
+                const submitBtn = document.getElementById("submitBtn");
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML =
+                        '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+                }
+            });
+        }
+    });
+
+    // Funciones para el modal de foto
+    function openPhotoModal() {
+        const modal = document.getElementById("photoModal");
+        const modalContent = document.getElementById("modalContent");
+        const modalImage = document.getElementById("modalImage");
+        const modalPlaceholder = document.getElementById("modalPlaceholder");
+        const previewImage = document.getElementById("previewImage");
+
+        if (modal && modalContent) {
+            // Mostrar el modal
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+
+            // Animar la entrada
+            setTimeout(() => {
+                modalContent.classList.remove("scale-95");
+                modalContent.classList.add("scale-100");
+            }, 10);
+
+            // Configurar la imagen del modal
+            if (previewImage && previewImage.src) {
+                modalImage.src = previewImage.src;
+                modalImage.alt = previewImage.alt;
+                modalImage.style.display = "block";
+                modalPlaceholder.style.display = "none";
+            } else {
+                modalImage.style.display = "none";
+                modalPlaceholder.style.display = "flex";
+            }
+
+            // Actualizar información del empleado en el modal
+            const nombreCompleto = document.getElementById("nombrePreviewStatic").textContent;
+            const modalEmployeeName = document.getElementById("modalEmployeeName");
+            if (modalEmployeeName) {
+                modalEmployeeName.textContent = nombreCompleto;
+            }
+
+            // Prevenir scroll del body
+            document.body.style.overflow = "hidden";
+        }
+    }
+
+    function closePhotoModal() {
+        const modal = document.getElementById("photoModal");
+        const modalContent = document.getElementById("modalContent");
+
+        if (modal && modalContent) {
+            // Animar la salida
+            modalContent.classList.remove("scale-100");
+            modalContent.classList.add("scale-95");
+
+            setTimeout(() => {
+                modal.classList.remove("flex");
+                modal.classList.add("hidden");
+                // Restaurar scroll del body
+                document.body.style.overflow = "";
+            }, 300);
+        }
+    }
+
+    // Cerrar modal al hacer clic fuera de él
+    document.addEventListener("DOMContentLoaded", function() {
+        const modal = document.getElementById("photoModal");
+        if (modal) {
+            modal.addEventListener("click", function(e) {
+                if (e.target === modal) {
+                    closePhotoModal();
+                }
+            });
+        }
+
+        // Cerrar modal con tecla Escape
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "Escape") {
+                closePhotoModal();
+            }
+        });
+    });
+</script>
+{% endblock %}

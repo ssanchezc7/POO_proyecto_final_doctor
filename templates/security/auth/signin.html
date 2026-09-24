@@ -1,0 +1,111 @@
+{% extends 'base.html' %} 
+{% block title %}Inicio{% endblock %} 
+{% load static %} 
+{% block content %}
+<div class="flex items-center justify-center min-h-screen">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 space-y-6">
+    <h2 class="text-2xl font-bold text-center text-gray-800">Iniciar Sesión</h2>
+    <form method="post" id="loginForm" class="space-y-5">
+      {% csrf_token %}
+      
+      <div>
+        <label for="email" class="block text-sm font-medium text-amber-700">Correo electrónico</label>
+        <input type="email" name="username" id="email" required autofocus
+               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+        <input type="password" name="password" id="password" required
+               class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+      </div>
+
+      {% if form.errors %}
+      <div class="text-sm text-red-600">
+        {% for field in form %}
+          {% for error in field.errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="flex items-center justify-between">
+        <div class="text-sm">
+          <a href="#" class="text-blue-600 hover:underline">¿Olvidaste tu contraseña?</a>
+        </div>
+      </div>
+
+      <button type="submit" id="loginButton"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors">
+        Iniciar sesión
+      </button>
+    </form>
+  </div>
+</div>
+<!-- Loading Component (agregar al final) -->
+<div id="medicalLoading" class="fixed inset-0 bg-gradient-to-br from-blue-900/95 to-indigo-900/95 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="text-center">
+        <!-- Doctor Icon Animation -->
+        <div class="relative mb-8">
+            <div class="w-32 h-32 mx-auto bg-white rounded-full flex items-center justify-center shadow-2xl float">
+                <i class="fas fa-user-md text-6xl text-blue-600"></i>
+            </div>
+            <!-- Estetoscopio animado -->
+            <div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
+                <i class="fas fa-stethoscope text-3xl text-red-500 heartbeat"></i>
+            </div>
+            <!-- Pulsos médicos -->
+            <div class="absolute top-0 left-0 w-full h-full">
+                <div class="w-full h-full border-4 border-blue-300 rounded-full animate-ping opacity-30"></div>
+            </div>
+        </div>
+
+        <!-- Loading Text -->
+        <div class="text-white text-center mb-6">
+            <h2 class="text-2xl font-bold mb-2">Preparando su consulta...</h2>
+            <p class="text-blue-200 text-lg">El doctor lo atenderá en un momento</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-80 mx-auto bg-white/20 rounded-full h-2 mb-4">
+            <div class="bg-gradient-to-r from-blue-400 to-blue-600 h-2 rounded-full animate-pulse" style="width: 60%"></div>
+        </div>
+
+        <!-- Loading Dots -->
+        <div class="flex justify-center space-x-2">
+            <div class="w-3 h-3 bg-white rounded-full animate-bounce"></div>
+            <div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+            <div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+        </div>
+    </div>
+</div>
+<style>
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    @keyframes heartbeat {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    
+    .float { animation: float 3s ease-in-out infinite; }
+    .heartbeat { animation: heartbeat 1.5s infinite; }
+</style>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        // Mostrar loading inmediatamente
+        document.getElementById('medicalLoading').classList.remove('hidden');
+        
+        // Deshabilitar botón para evitar doble click
+        document.getElementById('loginButton').disabled = true;
+        document.getElementById('loginButton').innerHTML = 'Iniciando sesión...';
+    });
+</script>
+{% endblock content %}

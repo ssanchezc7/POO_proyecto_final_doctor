@@ -1,0 +1,452 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  {% if object %}
+    Editar Medicamento
+  {% else %}
+    Nuevo Medicamento
+  {% endif %} - SaludTotal
+{% endblock %}
+
+{% block content %}
+  {% load static %}
+
+  <!-- Contenedor principal con altura controlada -->
+  <div class="min-h-screen bg-gray-50 dark:bg-white-900">
+    <div class="w-full px-6 py-8">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 sm:p-8 rounded-lg shadow-lg mb-8">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+          <div class="flex-1">
+            <h1 class="text-2xl sm:text-3xl font-bold">
+              <i class="fas fa-{% if object %}edit{% else %}plus{% endif %} mr-2"></i>
+              {% if object %}
+                Editar Medicamento
+              {% else %}
+                Nuevo Medicamento
+              {% endif %}
+            </h1>
+            <p class="text-green-100 mt-1 text-sm sm:text-base">
+              {% if object %}
+                Modifica la información del medicamento "{{ object.nombre }}"
+              {% else %}
+                Crea un nuevo medicamento en el sistema
+              {% endif %}
+            </p>
+          </div>
+          <div class="text-right mt-4 sm:mt-0">
+            <div class="text-xl sm:text-2xl font-bold">
+              <i class="fas fa-capsules"></i>
+            </div>
+            <div class="text-xs sm:text-sm text-green-100">Medicamento</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario -->
+      <form method="post" enctype="multipart/form-data" class="space-y-6" id="medicamentoForm">
+        {% csrf_token %}
+
+        <!-- Contenedor principal del formulario -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+          <!-- Vista previa del medicamento -->
+          <div class="bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+            <div class="text-center">
+              <div class="bg-white dark:bg-gray-800 rounded-full w-16 sm:w-20 h-16 sm:h-20 mx-auto flex items-center justify-center shadow-sm border border-gray-200 dark:border-gray-600 mb-3">
+                <div class="text-center" id="previewContainer">
+                  {% if object and object.foto %}
+                    <img id="fotoPreview" src="{{ object.foto.url }}" alt="Foto" class="w-12 sm:w-16 h-12 sm:h-16 rounded-full object-cover"/>
+                  {% else %}
+                    <div id="iconPreview">
+                      <i class="fas fa-capsules text-2xl sm:text-3xl text-green-600 dark:text-green-400"></i>
+                      <div id="nombrePreview" class="text-xs sm:text-sm font-bold text-green-600 dark:text-green-400 mt-1">
+                        {% if object %}
+                          {{ object.nombre|truncatechars:12 }}
+                        {% else %}
+                          --
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+              <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                Vista previa del medicamento
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                La información se actualizará mientras escribes
+              </p>
+            </div>
+          </div>
+
+          <!-- Campos del formulario -->
+          <div class="p-4 sm:p-6">
+            <!-- Grid de campos principales -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+              <!-- Campo Nombre -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <i class="fas fa-capsules text-green-500 mr-1"></i>
+                  {{ form.nombre.label }}
+                  <span class="text-red-500 ml-1">*</span>
+                </label>
+                <div class="relative">{{ form.nombre }}</div>
+                {% if form.nombre.errors %}
+                  <div class="mt-1 text-red-600 text-sm">
+                    {% for error in form.nombre.errors %}
+                      <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Ejemplo: Ibuprofeno, Paracetamol, Amoxicilina
+                </p>
+              </div>
+
+              <!-- Campo Tipo -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <i class="fas fa-pills text-blue-500 mr-1"></i>
+                  {{ form.tipo.label }}
+                  <span class="text-red-500 ml-1">*</span>
+                </label>
+                <div class="relative">{{ form.tipo }}</div>
+                {% if form.tipo.errors %}
+                  <div class="mt-1 text-red-600 text-sm">
+                    {% for error in form.tipo.errors %}
+                      <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Selecciona el tipo de medicamento
+                </p>
+              </div>
+
+              <!-- Campo Concentración -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <i class="fas fa-vial text-orange-500 mr-1"></i>
+                  {{ form.concentracion.label }}
+                </label>
+                <div class="relative">{{ form.concentracion }}</div>
+                {% if form.concentracion.errors %}
+                  <div class="mt-1 text-red-600 text-sm">
+                    {% for error in form.concentracion.errors %}
+                      <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Ejemplo: 500mg, 1g, 5%, 250mg/5ml
+                </p>
+              </div>
+
+              <!-- Campo Vía de Administración -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <i class="fas fa-syringe text-purple-500 mr-1"></i>
+                  {{ form.via_administracion.label }}
+                  <span class="text-red-500 ml-1">*</span>
+                </label>
+                <div class="relative">{{ form.via_administracion }}</div>
+                {% if form.via_administracion.errors %}
+                  <div class="mt-1 text-red-600 text-sm">
+                    {% for error in form.via_administracion.errors %}
+                      <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Forma de administración del medicamento
+                </p>
+              </div>
+
+              <!-- Campo Marca -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <i class="fas fa-tag text-indigo-500 mr-1"></i>
+                  {{ form.marca_medicamento.label }}
+                </label>
+                <div class="relative">{{ form.marca_medicamento }}</div>
+                {% if form.marca_medicamento.errors %}
+                  <div class="mt-1 text-red-600 text-sm">
+                    {% for error in form.marca_medicamento.errors %}
+                      <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Marca comercial (opcional)
+                </p>
+              </div>
+
+              <!-- Campo Stock -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <i class="fas fa-boxes text-yellow-500 mr-1"></i>
+                  {{ form.cantidad.label }}
+                  <span class="text-red-500 ml-1">*</span>
+                </label>
+                <div class="relative">{{ form.cantidad }}</div>
+                {% if form.cantidad.errors %}
+                  <div class="mt-1 text-red-600 text-sm">
+                    {% for error in form.cantidad.errors %}
+                      <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Cantidad disponible en inventario
+                </p>
+              </div>
+
+              <!-- Campo Precio -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <i class="fas fa-dollar-sign text-green-500 mr-1"></i>
+                  {{ form.precio.label }}
+                  <span class="text-red-500 ml-1">*</span>
+                </label>
+                <div class="relative">{{ form.precio }}</div>
+                {% if form.precio.errors %}
+                  <div class="mt-1 text-red-600 text-sm">
+                    {% for error in form.precio.errors %}
+                      <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Precio unitario del medicamento
+                </p>
+              </div>
+
+              <!-- Campo Foto -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <i class="fas fa-image text-pink-500 mr-1"></i>
+                  {{ form.foto.label }}
+                </label>
+                <div class="relative">{{ form.foto }}</div>
+                {% if form.foto.errors %}
+                  <div class="mt-1 text-red-600 text-sm">
+                    {% for error in form.foto.errors %}
+                      <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Imagen del medicamento (opcional)
+                </p>
+              </div>
+            </div>
+
+            <!-- Campo Descripción -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <i class="fas fa-align-left text-gray-500 mr-1"></i>
+                {{ form.descripcion.label }}
+              </label>
+              <div class="relative">{{ form.descripcion }}</div>
+              {% if form.descripcion.errors %}
+                <div class="mt-1 text-red-600 text-sm">
+                  {% for error in form.descripcion.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <i class="fas fa-info-circle mr-1"></i>
+                Descripción del medicamento, indicaciones, contraindicaciones
+              </p>
+            </div>
+
+            <!-- Checkboxes -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
+              <!-- Campo Comercial -->
+              <div>
+                <div class="flex items-center space-x-3">
+                  {{ form.comercial }}
+                  <label for="{{ form.comercial.id_for_label }}" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-copyright text-blue-500 mr-1"></i>
+                    {{ form.comercial.label }}
+                  </label>
+                </div>
+                {% if form.comercial.errors %}
+                  <div class="mt-1 text-red-600 text-sm">
+                    {% for error in form.comercial.errors %}
+                      <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 ml-7">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Marcar si es un medicamento comercial (desmarcar para genérico)
+                </p>
+              </div>
+
+              <!-- Campo Activo -->
+              <div>
+                <div class="flex items-center space-x-3">
+                  {{ form.activo }}
+                  <label for="{{ form.activo.id_for_label }}" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-toggle-on text-green-500 mr-1"></i>
+                    {{ form.activo.label }}
+                  </label>
+                </div>
+                {% if form.activo.errors %}
+                  <div class="mt-1 text-red-600 text-sm">
+                    {% for error in form.activo.errors %}
+                      <p>{{ error }}</p>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 ml-7">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Medicamento disponible para uso en el sistema
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 sticky bottom-0 z-10">
+          <div class="flex flex-col sm:flex-row justify-end items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+            <a href="{{ back_url }}" class="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+              <i class="fas fa-times mr-2"></i>
+              Cancelar
+            </a>
+            <button type="submit" id="submitBtn" class="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 shadow-sm">
+              <i class="fas fa-save mr-2"></i>
+              {% if object %}
+                Actualizar Medicamento
+              {% else %}
+                Crear Medicamento
+              {% endif %}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Script para manejar el formulario -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const form = document.getElementById("medicamentoForm");
+      const submitBtn = document.getElementById("submitBtn");
+      const nombreInput = document.getElementById("id_nombre");
+      const nombrePreview = document.getElementById("nombrePreview");
+      const fotoInput = document.getElementById("id_foto");
+
+      // Actualizar vista previa del nombre
+      if (nombreInput && nombrePreview) {
+        nombreInput.addEventListener("input", function () {
+          const nombre = this.value.trim();
+          if (nombre) {
+            nombrePreview.textContent = nombre.length > 12 ? nombre.substring(0, 12) + "..." : nombre;
+          } else {
+            nombrePreview.textContent = "--";
+          }
+        });
+      }
+
+      // Previsualizar imagen
+      if (fotoInput) {
+        fotoInput.addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          const previewContainer = document.getElementById("previewContainer");
+
+          if (file && file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              previewContainer.innerHTML = `
+                <img id="fotoPreview" src="${e.target.result}" alt="Preview" class="w-12 sm:w-16 h-12 sm:h-16 rounded-full object-cover">
+              `;
+            };
+            reader.readAsDataURL(file);
+          } else if (!file) {
+            // Restaurar vista por defecto
+            previewContainer.innerHTML = `
+              <div id="iconPreview">
+                <i class="fas fa-capsules text-2xl sm:text-3xl text-green-600 dark:text-green-400"></i>
+                <div id="nombrePreview" class="text-xs sm:text-sm font-bold text-green-600 dark:text-green-400 mt-1">
+                  ${nombreInput.value.trim() || "--"}
+                </div>
+              </div>
+            `;
+          }
+        });
+      }
+
+      // Validación del formulario antes del envío
+      form.addEventListener("submit", function (e) {
+        // Deshabilitar botón para evitar envíos múltiples
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+
+        // Habilitar botón nuevamente después de unos segundos por si hay errores
+        setTimeout(() => {
+          if (submitBtn.disabled) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '{% if object %}<i class="fas fa-save mr-2"></i>Actualizar Medicamento{% else %}<i class="fas fa-save mr-2"></i>Crear Medicamento{% endif %}';
+          }
+        }, 5000);
+      });
+
+      // Restaurar botón si hay errores en el formulario
+      if (document.querySelector(".text-red-600")) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '{% if object %}<i class="fas fa-save mr-2"></i>Actualizar Medicamento{% else %}<i class="fas fa-save mr-2"></i>Crear Medicamento{% endif %}';
+      }
+    });
+  </script>
+
+  <style>
+    /* Estilos adicionales para mejorar la responsividad */
+    @media (max-height: 600px) {
+      .container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+      }
+
+      .bg-gradient-to-r {
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .space-y-6 > * + * {
+        margin-top: 1rem;
+      }
+    }
+
+    /* Asegurar que los inputs se adapten correctamente */
+    input[type="text"],
+    input[type="number"],
+    input[type="file"],
+    select,
+    textarea {
+      width: 100%;
+      min-width: 0;
+    }
+
+    /* Mejorar el scroll en dispositivos móviles */
+    .overflow-y-auto {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Estilos para la barra de botones fija */
+    .sticky {
+      box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+  </style>
+{% endblock %}

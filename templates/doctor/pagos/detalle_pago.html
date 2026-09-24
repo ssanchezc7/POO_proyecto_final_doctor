@@ -1,0 +1,579 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+  Detalle del Pago #{{ pago.id }}
+{% endblock %}
+
+{% block content %}
+  <div class="w-full px-2 sm:px-4 lg:px-6 py-6">
+    <!-- Navegación -->
+    <nav class="flex mb-6" aria-label="Breadcrumb">
+      <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+          <a
+            href="{% url 'doctor:dashboard_pagos' %}"
+            class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white"
+          >
+            <i class="fas fa-tachometer-alt mr-2"></i>
+            Dashboard
+          </a>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <a
+              href="{% url 'doctor:lista_pagos' %}"
+              class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-white"
+            >
+              <i class="fas fa-credit-card mr-2"></i>
+              Pagos
+            </a>
+          </div>
+        </li>
+        <li>
+          <div class="flex items-center">
+            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Detalle #{{ pago.id }}
+            </span>
+          </div>
+        </li>
+      </ol>
+    </nav>
+
+    <!-- Encabezado del pago -->
+    <div class="w-full mb-6">
+      <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg p-6">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-white mb-2">
+              <i class="fas fa-receipt mr-2"></i>Pago #{{ pago.id }}
+            </h1>
+            <p class="text-indigo-100 text-lg">
+              {% if pago.atencion %}
+                Pago médico - Atención #{{ pago.atencion.id }}
+              {% else %}
+                Pago médico
+              {% endif %}
+            </p>
+          </div>
+          <div class="mt-4 lg:mt-0 lg:text-right">
+            <div class="text-4xl font-bold text-white mb-2" id="monto-total-header">
+              ${{ pago.monto_total|floatformat:2 }}
+            </div>
+            <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium {% if pago.estado == 'pendiente' %} bg-yellow-200 text-yellow-800 {% elif pago.estado == 'pagado' %} bg-green-200 text-green-800 {% else %} bg-red-200 text-red-800 {% endif %}">
+              <i class="fas fa-circle mr-2 text-xs"></i>
+              {{ pago.get_estado_display }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Información principal -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Información del paciente y atención -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-user-injured mr-2 text-indigo-600"></i>Información del Paciente
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-3">
+              <div>
+                <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Paciente</label>
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ pago.atencion.paciente.nombre_completo }}
+                </p>
+              </div>
+              <div>
+                <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Documento</label>
+                <p class="text-gray-900 dark:text-white">
+                  {{ pago.atencion.paciente.cedula_ecuatoriana }}
+                </p>
+              </div>
+              {% if pago.atencion.paciente.telefono %}
+                <div>
+                  <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Teléfono</label>
+                  <p class="text-gray-900 dark:text-white">
+                    {{ pago.atencion.paciente.telefono }}
+                  </p>
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="space-y-3">
+              <div>
+                <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Atención</label>
+                <p class="text-gray-900 dark:text-white">
+                  {{ pago.atencion.fecha_atencion|date:"d/m/Y H:i" }}
+                </p>
+              </div>
+              <div>
+                <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Motivo de Consulta</label>
+                <p class="text-gray-900 dark:text-white">
+                  {{ pago.atencion.motivo_consulta|truncatechars:100 }}
+                </p>
+              </div>
+              {% if pago.atencion.diagnostico %}
+                <div>
+                  <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Diagnóstico</label>
+                  <p class="text-gray-900 dark:text-white">
+                    {{ pago.atencion.diagnostico.nombre }}
+                  </p>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Detalles del pago -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              <i class="fas fa-list mr-2 text-indigo-600"></i>Detalles del Pago
+            </h2>
+            <a
+              href="{% url 'doctor:agregar_detalle_pago' pago.id %}"
+              class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors duration-200"
+            >
+              <i class="fas fa-plus mr-1"></i>
+              Agregar Detalle
+            </a>
+          </div>
+
+          {% if pago.detalles.all %}
+            <div class="overflow-x-auto">
+              <table class="w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Servicio
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Cantidad
+                    </th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Precio Unit.
+                    </th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Subtotal
+                    </th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {% for detalle in pago.detalles.all %}
+                    <tr id="detalle-row-{{ detalle.id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <div class="flex items-center">
+                          {% if 'Medicamento:' in detalle.servicio_adicional.nombre_servicio %}
+                            <i class="fas fa-pills text-blue-500 mr-2"></i>
+                          {% elif 'Consulta Médica' in detalle.servicio_adicional.nombre_servicio %}
+                            <i class="fas fa-stethoscope text-green-500 mr-2"></i>
+                          {% else %}
+                            <i class="fas fa-cog text-gray-500 mr-2"></i>
+                          {% endif %}
+                          <span>{{ detalle.servicio_adicional.nombre_servicio }}</span>
+                        </div>
+                        {% if detalle.servicio_adicional.descripcion %}
+                          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
+                            {{ detalle.servicio_adicional.descripcion }}
+                          </p>
+                        {% endif %}
+                      </td>
+                      <td class="px-4 py-3 text-sm text-center text-gray-900 dark:text-white">
+                        {{ detalle.cantidad }}
+                      </td>
+                      <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
+                        ${{ detalle.precio_unitario|floatformat:2 }}
+                      </td>
+                      <td class="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
+                        ${{ detalle.subtotal|floatformat:2 }}
+                      </td>
+                      <td class="px-4 py-3 text-center">
+                        <button
+                          type="button"
+                          class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 delete-btn"
+                          data-url="{% url 'doctor:confirmar_eliminar_detalle' detalle.id %}"
+                          data-row-id="detalle-row-{{ detalle.id }}"
+                        >
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+                <tfoot class="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <td colspan="3" class="px-4 py-3 text-sm font-semibold text-right text-gray-900 dark:text-white">
+                      Total:
+                    </td>
+                    <td id="monto-total-footer" class="px-4 py-3 text-sm font-bold text-right text-gray-900 dark:text-white">
+                      ${{ pago.monto_total|floatformat:2 }}
+                    </td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          {% else %}
+            <div class="text-center py-8">
+              <i class="fas fa-list-alt text-gray-400 text-4xl mb-4"></i>
+              <p class="text-gray-500 dark:text-gray-400 mb-4">
+                No hay detalles de pago registrados
+              </p>
+              <a
+                href="{% url 'doctor:agregar_detalle_pago' pago.id %}"
+                class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-200"
+              >
+                <i class="fas fa-plus mr-2"></i>
+                Agregar Primer Detalle
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Panel lateral -->
+      <div class="space-y-6">
+        <!-- Información del pago -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-info-circle mr-2 text-indigo-600"></i>Información del Pago
+          </h3>
+
+          <div class="space-y-4">
+            <div>
+              <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Creación</label>
+              <p class="text-gray-900 dark:text-white">
+                {{ pago.fecha_creacion|date:"d/m/Y H:i" }}
+              </p>
+            </div>
+
+            <div>
+              <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Vencimiento</label>
+              <p class="text-gray-900 dark:text-white">N/A</p>
+            </div>
+
+            {% if pago.fecha_pago %}
+              <div>
+                <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Fecha de Pago</label>
+                <p class="text-gray-900 dark:text-white">
+                  {{ pago.fecha_pago|date:"d/m/Y H:i" }}
+                </p>
+              </div>
+            {% endif %}
+
+            {% if pago.metodo_pago %}
+              <div>
+                <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Método de Pago</label>
+                <p class="text-gray-900 dark:text-white">
+                  {{ pago.get_metodo_pago_display }}
+                </p>
+              </div>
+            {% endif %}
+
+            {% if pago.referencia_pago %}
+              <div>
+                <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Referencia</label>
+                <p class="text-gray-900 dark:text-white font-mono text-sm">
+                  {{ pago.referencia_pago }}
+                </p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <i class="fas fa-bolt mr-2 text-indigo-600"></i>Acciones
+          </h3>
+
+          <div class="space-y-3">
+            {% if pago.estado == 'pendiente' %}
+              <a
+                href="{% url 'doctor:procesar_pago_paypal' pago.id %}"
+                class="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
+              >
+                <i class="fab fa-paypal mr-2"></i>
+                Procesar con PayPal
+              </a>
+
+              <button
+                type="button"
+                onclick="marcarComoPagado({{ pago.id }})"
+                class="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-200"
+              >
+                <i class="fas fa-check mr-2"></i>
+                Marcar como Pagado
+              </button>
+            {% endif %}
+
+            <a
+              href="{% url 'doctor:lista_pagos' %}"
+              class="w-full flex items-center justify-center px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors duration-200"
+            >
+              <i class="fas fa-arrow-left mr-2"></i>
+              Volver a la Lista
+            </a>
+
+            <a
+              href="{% url 'doctor:generar_recibo_pdf' pago.id %}"
+              class="w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-200"
+            >
+              <i class="fas fa-file-pdf mr-2"></i>
+              Descargar Recibo PDF
+            </a>
+          </div>
+        </div>
+
+        <!-- Historial de pagos del paciente -->
+        {% if otros_pagos %}
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              <i class="fas fa-history mr-2 text-indigo-600"></i>Otros Pagos del Paciente
+            </h3>
+
+            <div class="space-y-3">
+              {% for otro_pago in otros_pagos %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">
+                      Pago #{{ otro_pago.id }}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ otro_pago.fecha_creacion|date:"d/m/Y" }}
+                    </p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-sm font-bold text-gray-900 dark:text-white">
+                      ${{ otro_pago.monto_total|floatformat:2 }}
+                    </p>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {% if otro_pago.estado == 'pendiente' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% elif otro_pago.estado == 'pagado' %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% else %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% endif %}">
+                      {{ otro_pago.get_estado_display }}
+                    </span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+
+            <div class="mt-4">
+              <a
+                href="{% url 'doctor:lista_pagos' %}?paciente={{ pago.atencion.paciente.nombre_completo }}"
+                class="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+              >
+                Ver todos los pagos del paciente →
+              </a>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmación de Eliminación -->
+  <div id="delete-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 transition-opacity">
+    <div class="mx-auto max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+      <div class="text-center">
+        <i class="fas fa-exclamation-triangle text-5xl text-red-500"></i>
+        <h3 class="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
+          Confirmar Eliminación
+        </h3>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+          ¿Estás seguro de que deseas eliminar este detalle del pago? Esta acción no se puede deshacer.
+        </p>
+      </div>
+      <div class="mt-6 flex justify-center space-x-4">
+        <button
+          id="cancel-delete-btn"
+          type="button"
+          class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+        >
+          Cancelar
+        </button>
+        <button
+          id="confirm-delete-btn"
+          type="button"
+          class="rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script para funcionalidades adicionales -->
+  <script>
+    // --- Función para mostrar mensajes ---
+    function showMessage(message, type = "info") {
+      // Crear elemento de mensaje
+      const messageDiv = document.createElement("div");
+      messageDiv.className = `fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg transform transition-all duration-300 translate-x-full`;
+
+      if (type === "success") {
+        messageDiv.className += " bg-green-500 text-white";
+      } else if (type === "error") {
+        messageDiv.className += " bg-red-500 text-white";
+      } else {
+        messageDiv.className += " bg-blue-500 text-white";
+      }
+
+      messageDiv.innerHTML = `
+        <div class="flex items-center">
+          <i class="fas fa-${
+            type === "success"
+              ? "check-circle"
+              : type === "error"
+              ? "exclamation-circle"
+              : "info-circle"
+          } mr-2"></i>
+          <span>${message}</span>
+        </div>
+      `;
+
+      // Agregar al body
+      document.body.appendChild(messageDiv);
+
+      // Animar entrada
+      setTimeout(() => {
+        messageDiv.classList.remove("translate-x-full");
+      }, 100);
+
+      // Remover después de 5 segundos
+      setTimeout(() => {
+        messageDiv.classList.add("translate-x-full");
+        setTimeout(() => {
+          document.body.removeChild(messageDiv);
+        }, 300);
+      }, 5000);
+    }
+
+    // --- Lógica para el modal de eliminación ---
+    const deleteModal = document.getElementById("delete-modal");
+    const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
+    const cancelDeleteBtn = document.getElementById("cancel-delete-btn");
+    const deleteButtons = document.querySelectorAll(".delete-btn");
+    let urlToDelete = null;
+    let rowToDeleteId = null;
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === name + "=") {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+    const csrftoken = getCookie("csrftoken");
+
+    deleteButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        urlToDelete = button.dataset.url;
+        rowToDeleteId = button.dataset.rowId;
+        deleteModal.classList.remove("hidden");
+      });
+    });
+
+    cancelDeleteBtn.addEventListener("click", () => {
+      deleteModal.classList.add("hidden");
+      urlToDelete = null;
+      rowToDeleteId = null;
+    });
+
+    confirmDeleteBtn.addEventListener("click", () => {
+      if (!urlToDelete) return;
+
+      // Mostrar loading
+      confirmDeleteBtn.disabled = true;
+      confirmDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Eliminando...';
+
+      fetch(urlToDelete, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": csrftoken,
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Error al eliminar el detalle.");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            // Eliminar la fila de la tabla
+            const row = document.getElementById(rowToDeleteId);
+            if (row) {
+              row.remove();
+            }
+
+            // Actualizar el monto total
+            const nuevoTotal = parseFloat(data.nuevo_total).toFixed(2);
+            document.getElementById("monto-total-header").innerText = `$${nuevoTotal}`;
+            document.getElementById("monto-total-footer").innerText = `$${nuevoTotal}`;
+
+            // Mostrar mensaje de éxito
+            showMessage(`Detalle eliminado exitosamente. Nuevo total: $${nuevoTotal}`, "success");
+
+            // Verificar si no quedan detalles
+            const tableBody = document.querySelector("tbody");
+            if (tableBody && tableBody.children.length === 0) {
+              // Mostrar mensaje de "no hay detalles"
+              const tableContainer = document.querySelector(".overflow-x-auto");
+              if (tableContainer) {
+                tableContainer.innerHTML = `
+                  <div class="text-center py-8">
+                    <i class="fas fa-list-alt text-gray-400 text-4xl mb-4"></i>
+                    <p class="text-gray-500 dark:text-gray-400 mb-4">
+                      No hay detalles de pago registrados
+                    </p>
+                    <a href="{% url 'doctor:agregar_detalle_pago' pago.id %}"
+                       class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-200">
+                      <i class="fas fa-plus mr-2"></i>
+                      Agregar Primer Detalle
+                    </a>
+                  </div>
+                `;
+              }
+            }
+          } else {
+            showMessage(data.error || "Ocurrió un error al eliminar el detalle.", "error");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          showMessage("Error de conexión al intentar eliminar el detalle.", "error");
+        })
+        .finally(() => {
+          // Ocultar el modal y restaurar botón
+          deleteModal.classList.add("hidden");
+          confirmDeleteBtn.disabled = false;
+          confirmDeleteBtn.innerHTML = "Eliminar";
+          urlToDelete = null;
+          rowToDeleteId = null;
+        });
+    });
+
+    // --- Otras funcionalidades ---
+    function marcarComoPagado(pagoId) {
+      if (confirm("¿Está seguro de marcar este pago como pagado?")) {
+        // Aquí iría la lógica para marcar como pagado via AJAX
+        // Por ahora solo mostramos un mensaje
+        alert("Funcionalidad en desarrollo");
+      }
+    }
+  </script>
+{% endblock %}

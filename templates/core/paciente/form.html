@@ -1,0 +1,1023 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if object %}
+        Editar Paciente
+    {% else %}
+        Nuevo Paciente
+    {% endif %} - SaludTotal
+{% endblock %}
+
+{% block content %}
+    {% load static %}
+
+    <!-- Contenedor principal con altura controlada -->
+    <div class="min-h-screen bg-gray-50 white:bg-gray-900">
+        <div class="w-full px-6 py-8">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 sm:p-8 rounded-lg shadow-lg mb-8">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                    <div class="flex-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold">
+                            <i class="fas fa-{% if object %}edit{% else %}plus{% endif %} mr-2"></i>
+                            {% if object %}
+                                Editar Paciente
+                            {% else %}
+                                Nuevo Paciente
+                            {% endif %}
+                        </h1>
+                        <p class="text-blue-100 mt-1 text-sm sm:text-base">
+                            {% if object %}
+                                Modifica la información del paciente "{{ object.nombre_completo }}"
+                            {% else %}
+                                Registra un nuevo paciente en el sistema
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="text-right mt-4 sm:mt-0">
+                        <div class="text-xl sm:text-2xl font-bold">
+                            <i class="fas fa-user-injured"></i>
+                        </div>
+                        <div class="text-xs sm:text-sm text-blue-100">Paciente</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenedor de mensajes dinámicos -->
+            <div id="messagesContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4 hidden"></div>
+
+            <!-- Formulario -->
+            <form method="post" enctype="multipart/form-data" class="space-y-6" id="pacienteForm">
+                {% csrf_token %}
+
+                <!-- Contenedor principal del formulario -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+                    <!-- Vista previa del paciente -->
+                    <div class="bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-6 border-b border-gray-200 dark:border-gray-600">
+                        <div class="text-center">
+                            <div class="relative mx-auto mb-4">
+                                <!-- Contenedor de la foto clickeable -->
+                                <div class="relative w-20 sm:w-24 h-20 sm:h-24 mx-auto rounded-full overflow-hidden shadow-lg border-4 border-white dark:border-gray-800 bg-white dark:bg-gray-800 transition-all duration-200 hover:shadow-xl cursor-pointer"
+                                     onclick="openPhotoModal()"
+                                     id="photoPreview">
+                                    {% if object and object.foto %}
+                                        <img src="{{ object.foto.url }}"
+                                             alt="{{ object.nombre_completo }}"
+                                             class="w-full h-full object-cover"
+                                             id="previewImage" />
+                                        <!-- Overlay para indicar que es clickeable -->
+                                        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                                            <i class="fas fa-search-plus text-white opacity-0 hover:opacity-100 transition-opacity duration-200 text-lg"></i>
+                                        </div>
+                                    {% else %}
+                                        <div class="w-full h-full flex items-center justify-center">
+                                            <i class="fas fa-user-injured text-3xl sm:text-4xl text-blue-600 dark:text-blue-400"></i>
+                                        </div>
+                                        <!-- Indicador de sin foto -->
+                                        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center">
+                                            <i class="fas fa-camera text-white opacity-0 hover:opacity-60 transition-opacity duration-200 text-sm"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Nombre visible debajo de la foto -->
+                                <div class="mt-3">
+                                    <div class="text-sm font-bold text-blue-600 dark:text-blue-400" id="nombrePreviewStatic">
+                                        {% if object %}
+                                            {{ object.nombre_completo|truncatechars:20 }}
+                                        {% else %}
+                                            Nuevo Paciente
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                                Vista previa del paciente
+                            </h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                El nombre se actualizará mientras escribes • Haz clic en la foto para ampliar
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Campos del formulario -->
+                    <div class="p-4 sm:p-6 space-y-8">
+                        <!-- SECCIÓN 1: INFORMACIÓN PERSONAL (Siempre visible) -->
+                        <div class="bg-gray-50 dark:bg-gray-900/20 rounded-lg p-6 border border-gray-200 dark:border-gray-800">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                                <i class="fas fa-user mr-2 text-blue-500"></i>
+                                Información Personal
+                                <span class="text-gray-500 ml-2 text-sm">(Obligatorio)</span>
+                            </h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                                <!-- Campo Nombres -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <i class="fas fa-user text-blue-500 mr-1"></i>
+                                        {{ form.nombres.label }}
+                                        <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div class="relative">{{ form.nombres }}</div>
+                                    {% if form.nombres.errors %}
+                                        <div class="mt-1 text-red-600 text-sm">
+                                            {% for error in form.nombres.errors %}
+                                                <p>{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Campo Apellidos -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <i class="fas fa-user text-blue-500 mr-1"></i>
+                                        {{ form.apellidos.label }}
+                                        <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div class="relative">{{ form.apellidos }}</div>
+                                    {% if form.apellidos.errors %}
+                                        <div class="mt-1 text-red-600 text-sm">
+                                            {% for error in form.apellidos.errors %}
+                                                <p>{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Campo Cédula -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <i class="fas fa-id-card text-blue-500 mr-1"></i>
+                                        {{ form.cedula_ecuatoriana.label }}
+                                        <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div class="relative">{{ form.cedula_ecuatoriana }}</div>
+                                    {% if form.cedula_ecuatoriana.errors %}
+                                        <div class="mt-1 text-red-600 text-sm">
+                                            {% for error in form.cedula_ecuatoriana.errors %}
+                                                <p>{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        10 dígitos sin espacios ni guiones
+                                    </p>
+                                </div>
+
+                                <!-- Campo DNI -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <i class="fas fa-passport text-blue-500 mr-1"></i>
+                                        {{ form.dni.label }}
+                                    </label>
+                                    <div class="relative">{{ form.dni }}</div>
+                                    {% if form.dni.errors %}
+                                        <div class="mt-1 text-red-600 text-sm">
+                                            {% for error in form.dni.errors %}
+                                                <p>{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Documento internacional (opcional)
+                                    </p>
+                                </div>
+
+                                <!-- Campo Fecha de Nacimiento -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <i class="fas fa-birthday-cake text-blue-500 mr-1"></i>
+                                        {{ form.fecha_nacimiento.label }}
+                                        <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div class="relative">{{ form.fecha_nacimiento }}</div>
+                                    {% if form.fecha_nacimiento.errors %}
+                                        <div class="mt-1 text-red-600 text-sm">
+                                            {% for error in form.fecha_nacimiento.errors %}
+                                                <p>{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        No se permiten fechas futuras
+                                    </p>
+                                </div>
+
+                                <!-- Campo Foto -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        <i class="fas fa-camera text-blue-500 mr-1"></i>
+                                        {{ form.foto.label }}
+                                    </label>
+                                    <div class="relative">{{ form.foto }}</div>
+                                    {% if form.foto.errors %}
+                                        <div class="mt-1 text-red-600 text-sm">
+                                            {% for error in form.foto.errors %}
+                                                <p>{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Imagen del paciente (opcional)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN 2: INFORMACIÓN DE CONTACTO (Desplegable) -->
+                        <div class="bg-gray-50 dark:bg-gray-900/20 rounded-lg border border-gray-200 dark:border-gray-800">
+                            <button type="button"
+                                    class="w-full p-6 text-left flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900/30 transition-colors rounded-lg"
+                                    onclick="toggleSection('contacto')">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                                    <i class="fas fa-phone mr-2 text-green-500"></i>
+                                    Información de Contacto
+                                    <span class="text-gray-600 ml-2 text-sm">(Obligatorio)</span>
+                                </h3>
+                                <i class="fas fa-chevron-down text-gray-500 transform transition-transform duration-200" id="chevron-contacto"></i>
+                            </button>
+                            <div id="section-contacto" class="px-6 pb-6 hidden">
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                                    <!-- Campo Teléfono -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-phone text-green-500 mr-1"></i>
+                                            {{ form.telefono.label }}
+                                            <span class="text-red-500 ml-1">*</span>
+                                        </label>
+                                        <div class="relative">{{ form.telefono }}</div>
+                                        {% if form.telefono.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.telefono.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Email -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-envelope text-green-500 mr-1"></i>
+                                            {{ form.email.label }}
+                                        </label>
+                                        <div class="relative">{{ form.email }}</div>
+                                        {% if form.email.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.email.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Dirección -->
+                                    <div class="lg:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-map-marker-alt text-green-500 mr-1"></i>
+                                            {{ form.direccion.label }}
+                                            <span class="text-red-500 ml-1">*</span>
+                                        </label>
+                                        <div class="relative">{{ form.direccion }}</div>
+                                        {% if form.direccion.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.direccion.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Latitud -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-map text-green-500 mr-1"></i>
+                                            {{ form.latitud.label }}
+                                        </label>
+                                        <div class="relative">{{ form.latitud }}</div>
+                                        {% if form.latitud.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.latitud.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Longitud -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-map text-green-500 mr-1"></i>
+                                            {{ form.longitud.label }}
+                                        </label>
+                                        <div class="relative">{{ form.longitud }}</div>
+                                        {% if form.longitud.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.longitud.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN 3: INFORMACIÓN PERSONAL ADICIONAL (Desplegable) -->
+                        <div class="bg-gray-50 dark:bg-gray-900/20 rounded-lg border border-gray-200 dark:border-gray-800">
+                            <button type="button"
+                                    class="w-full p-6 text-left flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900/30 transition-colors rounded-lg"
+                                    onclick="toggleSection('personal')">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                                    <i class="fas fa-info-circle mr-2 text-purple-500"></i>
+                                    Información Personal Adicional
+                                </h3>
+                                <i class="fas fa-chevron-down text-gray-500 transform transition-transform duration-200" id="chevron-personal"></i>
+                            </button>
+                            <div id="section-personal" class="px-6 pb-6 hidden">
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                                    <!-- Campo Sexo -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-venus-mars text-purple-500 mr-1"></i>
+                                            {{ form.sexo.label }}
+                                            <span class="text-red-500 ml-1">*</span>
+                                        </label>
+                                        <div class="relative">{{ form.sexo }}</div>
+                                        {% if form.sexo.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.sexo.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Estado Civil -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-heart text-purple-500 mr-1"></i>
+                                            {{ form.estado_civil.label }}
+                                        </label>
+                                        <div class="relative">{{ form.estado_civil }}</div>
+                                        {% if form.estado_civil.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.estado_civil.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Tipo de Sangre -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-tint text-purple-500 mr-1"></i>
+                                            {{ form.tipo_sangre.label }}
+                                        </label>
+                                        <div class="relative">{{ form.tipo_sangre }}</div>
+                                        {% if form.tipo_sangre.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.tipo_sangre.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Activo -->
+                                    <div class="flex items-center">
+                                        <div class="flex items-center">
+                                            {{ form.activo }}
+                                            <label for="id_activo" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                                                <i class="fas fa-toggle-on text-purple-500 mr-1"></i>
+                                                {{ form.activo.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN 4: HISTORIA CLÍNICA (Desplegable) -->
+                        <div class="bg-gray-50 dark:bg-gray-900/20 rounded-lg border border-gray-200 dark:border-gray-800">
+                            <button type="button"
+                                    class="w-full p-6 text-left flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-900/30 transition-colors rounded-lg"
+                                    onclick="toggleSection('historia')">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                                    <i class="fas fa-notes-medical mr-2 text-red-500"></i>
+                                    Historia Clínica
+                                    <span class="text-gray-500 ml-2 text-sm">(Opcional)</span>
+                                </h3>
+                                <i class="fas fa-chevron-down text-gray-500 transform transition-transform duration-200" id="chevron-historia"></i>
+                            </button>
+                            <div id="section-historia" class="px-6 pb-6 hidden">
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                                    <!-- Campo Antecedentes Personales -->
+                                    <div class="lg:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-user-md text-red-500 mr-1"></i>
+                                            {{ form.antecedentes_personales.label }}
+                                        </label>
+                                        <div class="relative">{{ form.antecedentes_personales }}</div>
+                                        {% if form.antecedentes_personales.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.antecedentes_personales.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Antecedentes Quirúrgicos -->
+                                    <div class="lg:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-scalpel text-red-500 mr-1"></i>
+                                            {{ form.antecedentes_quirurgicos.label }}
+                                        </label>
+                                        <div class="relative">{{ form.antecedentes_quirurgicos }}</div>
+                                        {% if form.antecedentes_quirurgicos.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.antecedentes_quirurgicos.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Antecedentes Familiares -->
+                                    <div class="lg:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-users text-red-500 mr-1"></i>
+                                            {{ form.antecedentes_familiares.label }}
+                                        </label>
+                                        <div class="relative">{{ form.antecedentes_familiares }}</div>
+                                        {% if form.antecedentes_familiares.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.antecedentes_familiares.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Alergias -->
+                                    <div class="lg:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-exclamation-triangle text-red-500 mr-1"></i>
+                                            {{ form.alergias.label }}
+                                        </label>
+                                        <div class="relative">{{ form.alergias }}</div>
+                                        {% if form.alergias.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.alergias.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Medicamentos Actuales -->
+                                    <div class="lg:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-pills text-red-500 mr-1"></i>
+                                            {{ form.medicamentos_actuales.label }}
+                                        </label>
+                                        <div class="relative">{{ form.medicamentos_actuales }}</div>
+                                        {% if form.medicamentos_actuales.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.medicamentos_actuales.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Hábitos Tóxicos -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-smoking text-red-500 mr-1"></i>
+                                            {{ form.habitos_toxicos.label }}
+                                        </label>
+                                        <div class="relative">{{ form.habitos_toxicos }}</div>
+                                        {% if form.habitos_toxicos.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.habitos_toxicos.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Vacunas -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-syringe text-red-500 mr-1"></i>
+                                            {{ form.vacunas.label }}
+                                        </label>
+                                        <div class="relative">{{ form.vacunas }}</div>
+                                        {% if form.vacunas.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.vacunas.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Campo Antecedentes Gineco-Obstétricos -->
+                                    <div class="lg:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-female text-red-500 mr-1"></i>
+                                            {{ form.antecedentes_gineco_obstetricos.label }}
+                                        </label>
+                                        <div class="relative">{{ form.antecedentes_gineco_obstetricos }}</div>
+                                        {% if form.antecedentes_gineco_obstetricos.errors %}
+                                            <div class="mt-1 text-red-600 text-sm">
+                                                {% for error in form.antecedentes_gineco_obstetricos.errors %}
+                                                    <p>{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Solo para pacientes femeninas
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 sticky bottom-0 z-10">
+                    <div class="flex flex-col sm:flex-row justify-end items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                        <a href="{{ back_url }}"
+                           class="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                            <i class="fas fa-times mr-2"></i>
+                            Cancelar
+                        </a>
+                        <button type="submit"
+                                id="submitBtn"
+                                class="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 shadow-sm">
+                            <i class="fas fa-save mr-2"></i>
+                            {{ grabar }}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para ver la foto ampliada -->
+    <div id="photoModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden items-center justify-center p-4">
+        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-95" id="modalContent">
+            <!-- Header del modal -->
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                    <i class="fas fa-image mr-2 text-blue-500"></i>
+                    Foto del Paciente
+                </h3>
+                <button onclick="closePhotoModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Contenido del modal -->
+            <div class="p-6 text-center">
+                <div class="mb-4">
+                    <div class="w-48 h-48 mx-auto rounded-lg overflow-hidden shadow-lg bg-gray-100 dark:bg-gray-700">
+                        <img id="modalImage" src="" alt="" class="w-full h-full object-cover" style="display: none" />
+                        <div id="modalPlaceholder" class="w-full h-full flex items-center justify-center">
+                            <div class="text-center">
+                                <i class="fas fa-user-injured text-6xl text-gray-400 mb-2"></i>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Sin foto</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <h4 class="text-lg font-bold text-gray-900 dark:text-white mb-1" id="modalPatientName">
+                        {% if object %}
+                            {{ object.nombre_completo }}
+                        {% else %}
+                            Nuevo Paciente
+                        {% endif %}
+                    </h4>
+                    <p class="text-sm text-gray-500 dark:text-gray-400" id="modalPatientInfo">
+                        {% if object and object.tipo_sangre %}
+                            Tipo: {{ object.tipo_sangre }}
+                        {% else %}
+                            Vista previa
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer del modal -->
+            <div class="px-6 pb-4">
+                <button onclick="closePhotoModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                    <i class="fas fa-check mr-2"></i>
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/messages.js' %}"></script>
+
+    <style>
+        /* Estilos adicionales para mejorar la responsividad */
+        @media (max-height: 600px) {
+            .container {
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+            }
+
+            .bg-gradient-to-r {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .space-y-6 > * + * {
+                margin-top: 1rem;
+            }
+        }
+
+        /* Asegurar que los inputs se adapten correctamente */
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            min-width: 0;
+        }
+
+        /* Mejorar el scroll en dispositivos móviles */
+        .overflow-y-auto {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Hacer que las secciones desplegables sean más compactas en móviles */
+        @media (max-width: 640px) {
+            .space-y-8 > * + * {
+                margin-top: 1.5rem;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Debug: Verificar el valor del campo fecha al cargar la página
+            const fechaInput = document.getElementById("id_fecha_nacimiento");
+            if (fechaInput) {
+                console.log("Campo fecha encontrado:", fechaInput);
+                console.log("Valor inicial del campo fecha:", fechaInput.value);
+                console.log("Atributos del campo:", {
+                    type: fechaInput.type,
+                    max: fechaInput.getAttribute('max'),
+                    name: fechaInput.name,
+                    id: fechaInput.id
+                });
+
+                // Si el valor está vacío pero hay un objeto paciente, intentar setearlo
+                {% if object and object.fecha_nacimiento %}
+                    if (!fechaInput.value) {
+                        const fechaNacimiento = "{{ object.fecha_nacimiento|date:'Y-m-d' }}";
+                        console.log("Intentando setear fecha desde el objeto:", fechaNacimiento);
+                        fechaInput.value = fechaNacimiento;
+                    }
+                {% endif %}
+            }
+
+            // Función para alternar secciones desplegables
+            window.toggleSection = function (sectionName) {
+                const section = document.getElementById(`section-${sectionName}`);
+                const chevron = document.getElementById(`chevron-${sectionName}`);
+
+                if (section.classList.contains("hidden")) {
+                    section.classList.remove("hidden");
+                    chevron.classList.add("rotate-180");
+                } else {
+                    section.classList.add("hidden");
+                    chevron.classList.remove("rotate-180");
+                }
+            };
+
+            // Abrir automáticamente las secciones obligatorias
+            toggleSection("contacto");
+            toggleSection("personal");
+
+            // Actualizar vista previa del nombre
+            const nombresInput = document.getElementById("id_nombres");
+            const apellidosInput = document.getElementById("id_apellidos");
+            const nombrePreviewStatic = document.getElementById("nombrePreviewStatic");
+
+            function updateNombrePreview() {
+                const nombres = nombresInput ? nombresInput.value.trim() : "";
+                const apellidos = apellidosInput ? apellidosInput.value.trim() : "";
+
+                if (nombres || apellidos) {
+                    const nombreCompleto = `${apellidos} ${nombres}`.trim();
+                    const nombreMedio = nombreCompleto.substring(0, 20) + (nombreCompleto.length > 20 ? "..." : "");
+
+                    // Actualizar vista previa
+                    if (nombrePreviewStatic) {
+                        nombrePreviewStatic.textContent = nombreMedio;
+                    }
+
+                    // Actualizar modal si está abierto
+                    const modalPatientName = document.getElementById("modalPatientName");
+                    if (modalPatientName) {
+                        modalPatientName.textContent = nombreCompleto || "Nuevo Paciente";
+                    }
+                } else {
+                    if (nombrePreviewStatic) {
+                        nombrePreviewStatic.textContent = "Nuevo Paciente";
+                    }
+                    const modalPatientName = document.getElementById("modalPatientName");
+                    if (modalPatientName) {
+                        modalPatientName.textContent = "Nuevo Paciente";
+                    }
+                }
+            }
+
+            if (nombresInput) {
+                nombresInput.addEventListener("input", updateNombrePreview);
+            }
+            if (apellidosInput) {
+                apellidosInput.addEventListener("input", updateNombrePreview);
+            }
+
+            // Vista previa de foto
+            const fotoInput = document.getElementById("id_foto");
+            if (fotoInput) {
+                fotoInput.addEventListener("change", function (e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            const previewImage = document.getElementById("previewImage");
+                            const photoPreview = document.getElementById("photoPreview");
+
+                            if (previewImage) {
+                                previewImage.src = e.target.result;
+                            } else {
+                                // Crear nueva imagen si no existe
+                                photoPreview.innerHTML = `
+                                    <img src="${e.target.result}" alt="Foto del paciente" class="w-full h-full object-cover" id="previewImage" />
+                                    <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                                        <i class="fas fa-search-plus text-white opacity-0 hover:opacity-100 transition-opacity duration-200 text-lg"></i>
+                                    </div>
+                                `;
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            // Validación del formulario
+            const form = document.getElementById("pacienteForm");
+            if (form) {
+                // Validación de fecha de nacimiento
+                const fechaNacimientoInput = document.getElementById("id_fecha_nacimiento");
+
+                if (fechaNacimientoInput) {
+                    fechaNacimientoInput.addEventListener("change", function () {
+                        const fechaNacimiento = new Date(this.value);
+                        const hoy = new Date();
+                        hoy.setHours(0, 0, 0, 0);
+
+                        if (fechaNacimiento >= hoy) {
+                            showMessage("❌ La fecha de nacimiento no puede ser hoy o una fecha futura.", "error");
+                            this.value = "";
+                            this.classList.add("border-red-500");
+                            this.focus();
+                            return;
+                        }
+
+                        // Verificar edad máxima (150 años)
+                        const fechaMaxima = new Date();
+                        fechaMaxima.setFullYear(fechaMaxima.getFullYear() - 150);
+
+                        if (fechaNacimiento < fechaMaxima) {
+                            showMessage("⚠️ La fecha de nacimiento no puede ser anterior a 150 años.", "warning");
+                            this.value = "";
+                            this.classList.add("border-red-500");
+                            this.focus();
+                            return;
+                        }
+
+                        // Si la fecha es válida, remover el borde rojo
+                        this.classList.remove("border-red-500");
+                        showMessage("✅ Fecha de nacimiento válida.", "success");
+                    });
+                }
+
+                // Validación al enviar el formulario
+                form.addEventListener("submit", function (e) {
+                    const requiredFields = form.querySelectorAll("[required]");
+                    let isValid = true;
+                    let emptyFields = [];
+
+                    requiredFields.forEach((field) => {
+                        if (!field.value.trim()) {
+                            isValid = false;
+                            field.classList.add("border-red-500");
+
+                            // Obtener el label del campo
+                            const label = form.querySelector(`label[for="${field.id}"]`) || field.closest("div").querySelector("label");
+                            if (label) {
+                                emptyFields.push(label.textContent.replace("*", "").trim());
+                            }
+                        } else {
+                            field.classList.remove("border-red-500");
+                        }
+                    });
+
+                    if (!isValid) {
+                        e.preventDefault();
+                        const fieldsList = emptyFields.length > 3 ? emptyFields.slice(0, 3).join(", ") + "..." : emptyFields.join(", ");
+                        showMessage(`⚠️ Campos obligatorios faltantes: ${fieldsList}`, "warning");
+
+                        // Hacer scroll al primer campo vacío
+                        const firstEmptyField = form.querySelector("[required][value=''], [required]:not([value])");
+                        if (firstEmptyField) {
+                            // Abrir la sección que contiene el campo
+                            const section = firstEmptyField.closest('[id^="section-"]');
+                            if (section && section.classList.contains("hidden")) {
+                                const sectionName = section.id.replace("section-", "");
+                                toggleSection(sectionName);
+                            }
+
+                            firstEmptyField.scrollIntoView({
+                                behavior: "smooth",
+                                block: "center",
+                            });
+                            setTimeout(() => firstEmptyField.focus(), 500);
+                        }
+                        return false;
+                    }
+
+                    // Validación adicional de fecha antes del envío
+                    if (fechaNacimientoInput && fechaNacimientoInput.value) {
+                        const fechaNacimiento = new Date(fechaNacimientoInput.value);
+                        const hoy = new Date();
+                        hoy.setHours(0, 0, 0, 0);
+
+                        if (fechaNacimiento >= hoy) {
+                            e.preventDefault();
+                            showMessage("❌ La fecha de nacimiento no puede ser hoy o una fecha futura.", "error");
+                            fechaNacimientoInput.focus();
+                            return false;
+                        }
+                    }
+
+                    // Si todo está bien, mostrar mensaje de procesamiento
+                    showMessage("📋 Guardando información del paciente...", "info");
+
+                    // Deshabilitar el botón para evitar doble envío
+                    const submitBtn = document.getElementById("submitBtn");
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+
+                        // Re-habilitar después de 3 segundos por si hay errores
+                        setTimeout(() => {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>{{ grabar }}';
+                        }, 3000);
+                    }
+                });
+            }
+
+            // Auto-focus en el primer campo con error
+            const firstError = document.querySelector(".text-red-600");
+            if (firstError) {
+                const errorField = firstError.closest("div").querySelector("input, select, textarea");
+                if (errorField) {
+                    errorField.focus();
+                    errorField.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                    });
+
+                    // Abrir la sección que contiene el campo con error
+                    const section = errorField.closest('[id^="section-"]');
+                    if (section && section.classList.contains("hidden")) {
+                        const sectionName = section.id.replace("section-", "");
+                        toggleSection(sectionName);
+                    }
+                }
+            } else {
+                // Si no hay errores, focus en el primer campo
+                const firstField = document.querySelector("#id_nombres");
+                if (firstField) {
+                    firstField.focus();
+                }
+            }
+
+            // Función para ajustar la altura de la página dinámicamente
+            function adjustViewport() {
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty("--vh", `${vh}px`);
+            }
+
+            // Ejecutar al cargar y al cambiar el tamaño
+            adjustViewport();
+            window.addEventListener("resize", adjustViewport);
+            window.addEventListener("orientationchange", adjustViewport);
+        });
+
+        // Funciones para el modal de foto
+        function openPhotoModal() {
+            const modal = document.getElementById("photoModal");
+            const modalContent = document.getElementById("modalContent");
+            const modalImage = document.getElementById("modalImage");
+            const modalPlaceholder = document.getElementById("modalPlaceholder");
+            const previewImage = document.getElementById("previewImage");
+
+            if (modal && modalContent) {
+                // Mostrar el modal
+                modal.classList.remove("hidden");
+                modal.classList.add("flex");
+
+                // Animar la entrada
+                setTimeout(() => {
+                    modalContent.classList.remove("scale-95");
+                    modalContent.classList.add("scale-100");
+                }, 10);
+
+                // Configurar la imagen del modal
+                if (previewImage && previewImage.src) {
+                    modalImage.src = previewImage.src;
+                    modalImage.alt = previewImage.alt;
+                    modalImage.style.display = "block";
+                    modalPlaceholder.style.display = "none";
+                } else {
+                    modalImage.style.display = "none";
+                    modalPlaceholder.style.display = "flex";
+                }
+
+                // Actualizar información del paciente en el modal
+                const nombreCompleto = document.getElementById("nombrePreviewStatic").textContent;
+                const modalPatientName = document.getElementById("modalPatientName");
+                if (modalPatientName) {
+                    modalPatientName.textContent = nombreCompleto;
+                }
+
+                // Prevenir scroll del body
+                document.body.style.overflow = "hidden";
+            }
+        }
+
+        function closePhotoModal() {
+            const modal = document.getElementById("photoModal");
+            const modalContent = document.getElementById("modalContent");
+
+            if (modal && modalContent) {
+                // Animar la salida
+                modalContent.classList.remove("scale-100");
+                modalContent.classList.add("scale-95");
+
+                setTimeout(() => {
+                    modal.classList.remove("flex");
+                    modal.classList.add("hidden");
+                    // Restaurar scroll del body
+                    document.body.style.overflow = "";
+                }, 300);
+            }
+        }
+
+        // Cerrar modal al hacer clic fuera de él
+        document.addEventListener("DOMContentLoaded", function() {
+            const modal = document.getElementById("photoModal");
+            if (modal) {
+                modal.addEventListener("click", function(e) {
+                    if (e.target === modal) {
+                        closePhotoModal();
+                    }
+                });
+            }
+
+            // Cerrar modal con tecla Escape
+            document.addEventListener("keydown", function(e) {
+                if (e.key === "Escape") {
+                    closePhotoModal();
+                }
+            });
+        });
+    </script>
+{% endblock %}

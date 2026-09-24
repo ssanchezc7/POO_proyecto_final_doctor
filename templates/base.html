@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/ripple-effect.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/messages.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/profile.css' %}" />
+  <title>{% block title %}Mi Proyecto Django{% endblock %}</title>
+</head>
+<body class="min-h-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+  {% block navBar %}
+    {% include 'components/navbar.html' %}
+  {% endblock navBar %}
+
+  <!-- Messages Component -->
+  {% include 'components/messages.html' %}
+
+  <!-- Main Content -->
+  <main class="flex-1">
+    {% block content %}{% endblock content %}
+  </main>
+
+  {% block js %}
+    <script src="{% static 'js/ripple-effect.js' %}"></script>
+    <script src="{% static 'js/messages.js' %}"></script>
+  {% endblock %}
+</body>
+</html>

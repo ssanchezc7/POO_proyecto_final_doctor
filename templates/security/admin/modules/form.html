@@ -1,0 +1,398 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if object %}Editar Módulo{% else %}Nuevo Módulo{% endif %} - SaludTotal
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<!-- Contenedor principal con altura controlada -->
+<div class="min-h-screen bg-gray-50 dark:bg-white-900">
+    <div class="w-full px-6 py-8">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 sm:p-8 rounded-lg shadow-lg mb-8">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                <div class="flex-1">
+                    <h1 class="text-2xl sm:text-3xl font-bold">
+                        <i class="fas fa-{% if object %}edit{% else %}plus{% endif %} mr-2"></i>
+                        {% if object %}Editar Módulo{% else %}Nuevo Módulo{% endif %}
+                    </h1>
+                    <p class="text-blue-100 mt-1 text-sm sm:text-base">
+                        {% if object %}
+                            Modifica la información del módulo "{{ object.name }}"
+                        {% else %}
+                            Crea un nuevo módulo en el sistema
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="text-right mt-4 sm:mt-0">
+                    <div class="text-xl sm:text-2xl font-bold">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                    <div class="text-xs sm:text-sm text-blue-100">Módulo</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario -->
+        <form method="post" class="space-y-6" id="moduleForm">
+            {% csrf_token %}
+            
+            <!-- Contenedor principal del formulario -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+                
+                <!-- Vista previa del ícono -->
+                <div class="bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+                    <div class="text-center">
+                        <div class="bg-white dark:bg-gray-800 rounded-full w-12 sm:w-16 h-12 sm:h-16 mx-auto flex items-center justify-center shadow-sm border border-gray-200 dark:border-gray-600 mb-3">
+                            <i id="iconPreview" class="fas fa-cube text-xl sm:text-2xl text-blue-600"></i>
+                        </div>
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white">Vista previa del ícono</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">El ícono se actualizará mientras escribes</p>
+                    </div>
+                </div>
+
+                <!-- Campos del formulario -->
+                <div class="p-4 sm:p-6">
+                    
+                    <!-- Grid de campos principales -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+                        
+                        <!-- Campo Name -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-tag text-blue-500 mr-1"></i>
+                                {{ form.name.label }}
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <div class="relative">
+                                {{ form.name }}
+                            </div>
+                            {% if form.name.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in form.name.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Campo URL -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-link text-blue-500 mr-1"></i>
+                                {{ form.url.label }}
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <div class="relative">
+                                {{ form.url }}
+                            </div>
+                            {% if form.url.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in form.url.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Nombre de la URL de Django (ej: app:view_name)
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Segunda fila de campos -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
+                        
+                        <!-- Campo Menu -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-bars text-blue-500 mr-1"></i>
+                                {{ form.menu.label }}
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <div class="relative">
+                                {{ form.menu }}
+                            </div>
+                            {% if form.menu.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in form.menu.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Campo Icon -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-icons text-blue-500 mr-1"></i>
+                                {{ form.icon.label }}
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <div class="relative">
+                                {{ form.icon }}
+                            </div>
+                            {% if form.icon.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in form.icon.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Clase de FontAwesome (ej: fas fa-users)
+                            </p>
+                        </div>
+
+                        <!-- Campo Order -->
+                        <div class="sm:col-span-2 lg:col-span-1">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-sort-numeric-down text-blue-500 mr-1"></i>
+                                {{ form.order.label }}
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <div class="relative">
+                                {{ form.order }}
+                            </div>
+                            {% if form.order.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in form.order.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Orden de aparición en el menú
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Campo Description -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <i class="fas fa-align-left text-blue-500 mr-1"></i>
+                            {{ form.description.label }}
+                            <span class="text-red-500 ml-1">*</span>
+                        </label>
+                        <div class="relative">
+                            {{ form.description }}
+                        </div>
+                        {% if form.description.errors %}
+                            <div class="mt-1 text-red-600 text-sm">
+                                {% for error in form.description.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Breve descripción de la funcionalidad del módulo
+                        </p>
+                    </div>
+
+                    <!-- Campo Is Active y Permissions -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        
+                        <!-- Campo Is Active -->
+                        <div>
+                            <div class="flex items-start space-x-3">
+                                <div class="flex items-center h-5">
+                                    {{ form.is_active }}
+                                </div>
+                                <div class="text-sm">
+                                    <label class="font-medium text-gray-700 dark:text-gray-300">
+                                        <i class="fas fa-toggle-on text-green-500 mr-1"></i>
+                                        {{ form.is_active.label }}
+                                    </label>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        Si está desactivado, el módulo no será visible en el menú
+                                    </p>
+                                </div>
+                            </div>
+                            {% if form.is_active.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in form.is_active.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Campo Permissions -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-lock text-blue-500 mr-1"></i>
+                                {{ form.permissions.label }}
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            <!-- Contenedor de permisos con altura adaptativa -->
+                            <div class="relative">
+                                <div class="border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 max-h-32 sm:max-h-40 overflow-y-auto">
+                                    <div class="p-3 space-y-2">
+                                        {% for permission in form.permissions %}
+                                            <div class="flex items-start space-x-2">
+                                                {{ permission.tag }}
+                                                <label for="{{ permission.id_for_label }}" class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer flex-1 leading-tight">
+                                                    {{ permission.choice_label }}
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if form.permissions.errors %}
+                                <div class="mt-1 text-red-600 text-sm">
+                                    {% for error in form.permissions.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Permisos necesarios para acceder a este módulo
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 sticky bottom-0 z-10">
+                <div class="flex flex-col sm:flex-row justify-end items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                    <a href="{% url 'security:module_list' %}" 
+                       class="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                        <i class="fas fa-times mr-2"></i>
+                        Cancelar
+                    </a>
+                    <button type="submit" 
+                            id="submitBtn"
+                            class="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 shadow-sm">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if object %}Actualizar Módulo{% else %}Crear Módulo{% endif %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* Estilos adicionales para mejorar la responsividad */
+@media (max-height: 600px) {
+    .container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    .bg-gradient-to-r {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .space-y-6 > * + * {
+        margin-top: 1rem;
+    }
+}
+
+/* Asegurar que los inputs se adapten correctamente */
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+    width: 100%;
+    min-width: 0;
+}
+
+/* Mejorar el scroll en dispositivos móviles */
+.overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Hacer que el contenedor de permisos sea más compacto en móviles */
+@media (max-width: 640px) {
+    .max-h-32 {
+        max-height: 8rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Referencias a elementos
+    const iconInput = document.getElementById('{{ form.icon.id_for_label }}');
+    const iconPreview = document.getElementById('iconPreview');
+    const form = document.getElementById('moduleForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    // Función para actualizar vista previa del ícono
+    function updateIconPreview() {
+        const iconClass = iconInput.value.trim();
+        if (iconClass) {
+            // Limpiar clases previas y agregar las nuevas
+            iconPreview.className = iconClass + ' text-xl sm:text-2xl text-blue-600 dark:text-blue-400';
+        } else {
+            // Ícono por defecto
+            iconPreview.className = 'fas fa-cube text-xl sm:text-2xl text-gray-400';
+        }
+    }
+    
+    // Inicializar vista previa del ícono
+    if (iconInput) {
+        // Actualizar vista previa al cargar (para edición)
+        updateIconPreview();
+        
+        // Actualizar vista previa cuando cambie el input
+        iconInput.addEventListener('input', updateIconPreview);
+        iconInput.addEventListener('keyup', updateIconPreview);
+        iconInput.addEventListener('change', updateIconPreview);
+    }
+    
+    // Manejar envío del formulario
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e) {
+            // Deshabilitar el botón para evitar doble envío
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+            
+            // Re-habilitar después de 3 segundos por si hay errores
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '{% if object %}<i class="fas fa-save mr-2"></i>Actualizar Módulo{% else %}<i class="fas fa-save mr-2"></i>Crear Módulo{% endif %}';
+            }, 3000);
+        });
+    }
+    
+    // Auto-focus en el primer campo con error
+    const firstError = document.querySelector('.text-red-600');
+    if (firstError) {
+        const errorField = firstError.closest('div').querySelector('input, select, textarea');
+        if (errorField) {
+            errorField.focus();
+            errorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    } else {
+        // Si no hay errores, focus en el primer campo
+        const firstField = document.querySelector('#{{ form.name.id_for_label }}');
+        if (firstField) {
+            firstField.focus();
+        }
+    }
+    
+    // Función para ajustar la altura de la página dinámicamente
+    function adjustViewport() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    
+    // Ejecutar al cargar y al cambiar el tamaño
+    adjustViewport();
+    window.addEventListener('resize', adjustViewport);
+    window.addEventListener('orientationchange', adjustViewport);
+});
+</script>
+
+{% endblock %}

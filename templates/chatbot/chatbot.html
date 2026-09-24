@@ -1,0 +1,641 @@
+{% extends 'base.html' %} {% load static %} {% block title %}ChatBot Médico{%
+endblock %} {% block extra_css %}
+<style>
+  .chatbot-container {
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    background: #f8f9fa;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .chat-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: white;
+  }
+
+  .message {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .message.user {
+    justify-content: flex-end;
+  }
+
+  .message.bot {
+    justify-content: flex-start;
+  }
+
+  .message-bubble {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.4;
+    word-wrap: break-word;
+  }
+
+  .message.user .message-bubble {
+    background: #007bff;
+    color: white;
+    margin-left: auto;
+  }
+
+  .message.bot .message-bubble {
+    background: #e9ecef;
+    color: #333;
+    margin-right: auto;
+  }
+
+  .message-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .message.user .message-avatar {
+    background: #007bff;
+    color: white;
+    order: 1;
+  }
+
+  .message.bot .message-avatar {
+    background: #28a745;
+    color: white;
+  }
+
+  .chat-input-container {
+    padding: 20px;
+    background: white;
+    border-top: 1px solid #dee2e6;
+  }
+
+  .chat-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .chat-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #dee2e6;
+    border-radius: 25px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  .chat-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  }
+
+  .voice-btn,
+  .send-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .voice-btn {
+    background: #28a745;
+    color: white;
+  }
+
+  .voice-btn:hover {
+    background: #218838;
+    transform: scale(1.1);
+  }
+
+  .voice-btn.recording {
+    background: #dc3545;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .send-btn {
+    background: #007bff;
+    color: white;
+  }
+
+  .send-btn:hover {
+    background: #0056b3;
+    transform: scale(1.1);
+  }
+
+  .send-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .typing-indicator {
+    display: none;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .typing-indicator.show {
+    display: flex;
+  }
+
+  .typing-dots {
+    display: flex;
+    gap: 4px;
+    margin-left: 10px;
+  }
+
+  .typing-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #6c757d;
+    animation: typing 1.4s infinite;
+  }
+
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes typing {
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+    }
+    30% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .conversations-sidebar {
+    width: 300px;
+    background: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    padding: 20px;
+  }
+
+  .conversation-item {
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  .conversation-item:hover {
+    background: #e9ecef;
+  }
+
+  .conversation-item.active {
+    background: #007bff;
+    color: white;
+  }
+
+  .voice-status {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    z-index: 1000;
+    display: none;
+  }
+
+  .voice-status.show {
+    display: block;
+  }
+
+  .error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    border: 1px solid #f5c6cb;
+  }
+
+  .success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    border: 1px solid #c3e6cb;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <!-- Sidebar de conversaciones -->
+    <div class="col-md-3 d-none d-md-block">
+      <div class="conversations-sidebar">
+        <h5 class="mb-3">Conversaciones</h5>
+        <div class="conversation-item active" data-conversation-id="new">
+          <i class="fas fa-plus"></i> Nueva Conversación
+        </div>
+        {% for conv in conversations %}
+        <div class="conversation-item" data-conversation-id="{{ conv.id }}">
+          <div class="fw-bold">{{ conv.title|truncatechars:30 }}</div>
+          <small class="text-muted"
+            >{{ conv.updated_at|date:"d/m/Y H:i" }}</small
+          >
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Chat principal -->
+    <div class="col-md-9">
+      <div class="chatbot-container">
+        <div class="chat-header">
+          <i class="fas fa-robot"></i> ChatBot Médico
+          <div class="small mt-1">
+            Consulta información de pacientes, citas, doctores y más
+          </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+          <div class="message bot">
+            <div class="message-avatar">🤖</div>
+            <div class="message-bubble">
+              ¡Hola! Soy tu asistente médico virtual. Puedo ayudarte con:
+              <ul class="mt-2 mb-0">
+                <li>Información de pacientes</li>
+                <li>Consulta de citas médicas</li>
+                <li>Datos de doctores y especialidades</li>
+                <li>Lista de especialidades médicas</li>
+                <li>Stock de medicamentos</li>
+                <li>Información médica de internet</li>
+                <li>Estadísticas de la clínica</li>
+              </ul>
+              <div class="mt-2">
+                <strong>Ejemplos de consultas:</strong><br />
+                • "¿Cuántos pacientes tengo registrados?"<br />
+                • "Busca información del paciente con cédula 1234567890"<br />
+                • "¿Qué citas tengo hoy?"<br />
+                • "¿Qué especialidades tenemos disponibles?"<br />
+                • "¿Cuántos doctores hay por especialidad?"<br />
+                • "Para qué sirve el paracetamol"<br />
+                • "¿Qué es la amoxicilina?"<br />
+                • "Muestra estadísticas de este mes"
+              </div>
+            </div>
+          </div>
+
+          <div class="typing-indicator">
+            <div class="message-avatar">🤖</div>
+            <div class="typing-dots">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input-container">
+          <div class="chat-input-group">
+            <button
+              class="voice-btn"
+              id="voiceBtn"
+              title="Presiona para hablar"
+            >
+              <i class="fas fa-microphone"></i>
+            </button>
+            <input
+              type="text"
+              class="chat-input"
+              id="messageInput"
+              placeholder="Escribe tu consulta aquí..."
+            />
+            <button class="send-btn" id="sendBtn" title="Enviar mensaje">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="voice-status" id="voiceStatus"></div>
+{% endblock %} {% block extra_js %}
+<script>
+  class MedicalChatbot {
+    constructor() {
+      this.currentConversationId = null;
+      this.isRecording = false;
+      this.recognition = null;
+      this.init();
+    }
+
+    init() {
+      this.setupEventListeners();
+      this.initSpeechRecognition();
+      this.focusInput();
+    }
+
+    setupEventListeners() {
+      // Enviar mensaje
+      document
+        .getElementById("sendBtn")
+        .addEventListener("click", () => this.sendMessage());
+      document
+        .getElementById("messageInput")
+        .addEventListener("keypress", (e) => {
+          if (e.key === "Enter") this.sendMessage();
+        });
+
+      // Reconocimiento de voz
+      document
+        .getElementById("voiceBtn")
+        .addEventListener("click", () => this.toggleVoiceRecognition());
+
+      // Conversaciones
+      document.querySelectorAll(".conversation-item").forEach((item) => {
+        item.addEventListener("click", () =>
+          this.loadConversation(item.dataset.conversationId)
+        );
+      });
+    }
+
+    initSpeechRecognition() {
+      if (
+        "webkitSpeechRecognition" in window ||
+        "SpeechRecognition" in window
+      ) {
+        const SpeechRecognition =
+          window.SpeechRecognition || window.webkitSpeechRecognition;
+        this.recognition = new SpeechRecognition();
+        this.recognition.lang = "es-ES";
+        this.recognition.continuous = false;
+        this.recognition.interimResults = false;
+
+        this.recognition.onstart = () => {
+          this.isRecording = true;
+          this.updateVoiceButton();
+          this.showVoiceStatus("Escuchando...");
+        };
+
+        this.recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          document.getElementById("messageInput").value = transcript;
+          this.showVoiceStatus("Mensaje capturado");
+          setTimeout(() => this.sendMessage(), 500);
+        };
+
+        this.recognition.onerror = (event) => {
+          console.error("Error de reconocimiento de voz:", event.error);
+          this.showVoiceStatus("Error al capturar voz");
+          this.isRecording = false;
+          this.updateVoiceButton();
+        };
+
+        this.recognition.onend = () => {
+          this.isRecording = false;
+          this.updateVoiceButton();
+          this.hideVoiceStatus();
+        };
+      } else {
+        console.warn("Reconocimiento de voz no soportado");
+        document.getElementById("voiceBtn").style.display = "none";
+      }
+    }
+
+    toggleVoiceRecognition() {
+      if (!this.recognition) return;
+
+      if (this.isRecording) {
+        this.recognition.stop();
+      } else {
+        this.recognition.start();
+      }
+    }
+
+    updateVoiceButton() {
+      const voiceBtn = document.getElementById("voiceBtn");
+      if (this.isRecording) {
+        voiceBtn.classList.add("recording");
+        voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
+      } else {
+        voiceBtn.classList.remove("recording");
+        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+      }
+    }
+
+    showVoiceStatus(message) {
+      const status = document.getElementById("voiceStatus");
+      status.textContent = message;
+      status.classList.add("show");
+    }
+
+    hideVoiceStatus() {
+      const status = document.getElementById("voiceStatus");
+      status.classList.remove("show");
+    }
+
+    async sendMessage() {
+      const input = document.getElementById("messageInput");
+      const message = input.value.trim();
+
+      if (!message) return;
+
+      // Mostrar mensaje del usuario
+      this.addMessage(message, "user");
+      input.value = "";
+
+      // Mostrar indicador de escritura
+      this.showTypingIndicator();
+
+      try {
+        const response = await fetch("/chatbot/api/chat/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": this.getCsrfToken(),
+          },
+          body: JSON.stringify({
+            message: message,
+            conversation_id: this.currentConversationId,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          this.hideTypingIndicator();
+          this.addMessage(data.response, "bot");
+          this.currentConversationId = data.conversation_id;
+
+          // Mostrar contexto si está disponible
+          if (data.context && Object.keys(data.context).length > 0) {
+            console.log("Contexto médico:", data.context);
+          }
+        } else {
+          this.hideTypingIndicator();
+          this.addMessage("Error: " + data.error, "bot", true);
+        }
+      } catch (error) {
+        this.hideTypingIndicator();
+        this.addMessage(
+          "Error de conexión. Por favor intenta nuevamente.",
+          "bot",
+          true
+        );
+        console.error("Error:", error);
+      }
+
+      this.focusInput();
+    }
+
+    addMessage(text, sender, isError = false) {
+      const chatMessages = document.getElementById("chatMessages");
+      const messageDiv = document.createElement("div");
+      messageDiv.className = `message ${sender}`;
+
+      const avatar = sender === "user" ? "👤" : "🤖";
+      const bubbleClass = isError
+        ? "message-bubble error-message"
+        : "message-bubble";
+
+      messageDiv.innerHTML = `
+            <div class="message-avatar">${avatar}</div>
+            <div class="${bubbleClass}">${this.formatMessage(text)}</div>
+        `;
+
+      // Insertar antes del indicador de escritura
+      const typingIndicator = document.querySelector(".typing-indicator");
+      chatMessages.insertBefore(messageDiv, typingIndicator);
+
+      // Scroll al final
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    formatMessage(text) {
+      // Formatear texto con markdown básico
+      return text
+        .replace(/\n/g, "<br>")
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*(.*?)\*/g, "<em>$1</em>")
+        .replace(/`(.*?)`/g, "<code>$1</code>");
+    }
+
+    showTypingIndicator() {
+      document.querySelector(".typing-indicator").classList.add("show");
+      document.getElementById("chatMessages").scrollTop =
+        document.getElementById("chatMessages").scrollHeight;
+    }
+
+    hideTypingIndicator() {
+      document.querySelector(".typing-indicator").classList.remove("show");
+    }
+
+    async loadConversation(conversationId) {
+      if (conversationId === "new") {
+        this.currentConversationId = null;
+        this.clearMessages();
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/chatbot/api/conversation/${conversationId}/`
+        );
+        const data = await response.json();
+
+        if (data.success) {
+          this.currentConversationId = conversationId;
+          this.clearMessages();
+
+          data.history.forEach((msg) => {
+            this.addMessage(msg.message, "user");
+            this.addMessage(msg.response, "bot");
+          });
+
+          // Actualizar sidebar
+          document.querySelectorAll(".conversation-item").forEach((item) => {
+            item.classList.remove("active");
+          });
+          document
+            .querySelector(`[data-conversation-id="${conversationId}"]`)
+            .classList.add("active");
+        }
+      } catch (error) {
+        console.error("Error cargando conversación:", error);
+      }
+    }
+
+    clearMessages() {
+      const chatMessages = document.getElementById("chatMessages");
+      const messages = chatMessages.querySelectorAll(
+        ".message:not(.typing-indicator)"
+      );
+      messages.forEach((msg) => {
+        if (!msg.classList.contains("typing-indicator")) {
+          msg.remove();
+        }
+      });
+    }
+
+    focusInput() {
+      document.getElementById("messageInput").focus();
+    }
+
+    getCsrfToken() {
+      return document.querySelector("[name=csrfmiddlewaretoken]").value;
+    }
+  }
+
+  // Inicializar chatbot cuando se carga la página
+  document.addEventListener("DOMContentLoaded", () => {
+    new MedicalChatbot();
+  });
+</script>
+{% endblock %}

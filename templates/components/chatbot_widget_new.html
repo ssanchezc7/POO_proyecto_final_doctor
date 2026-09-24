@@ -1,0 +1,107 @@
+{% load static %}
+
+<!-- Chatbot Widget Flotante -->
+<link rel="stylesheet" href="{% static 'css/chatbot/widget.css' %}" />
+
+<div id="chatbotWidget" class="chatbot-widget">
+  <!-- Botón para abrir/cerrar el chat -->
+  <button
+    id="chatbotToggle"
+    class="chatbot-toggle"
+    title="Abrir ChatBot Médico"
+  >
+    <i class="fas fa-robot"></i>
+    <span class="pulse-ring"></span>
+  </button>
+
+  <!-- Ventana del chat -->
+  <div id="chatbotWindow" class="chatbot-window">
+    <div class="chatbot-header">
+      <div class="chatbot-title">
+        <i class="fas fa-robot"></i>
+        <span>ChatBot Médico</span>
+      </div>
+      <div class="chatbot-controls">
+        <button
+          id="chatbotMinimize"
+          class="chatbot-control-btn"
+          title="Minimizar"
+        >
+          <i class="fas fa-minus"></i>
+        </button>
+        <button id="chatbotClose" class="chatbot-control-btn" title="Cerrar">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="chatbot-body">
+      <div class="chatbot-messages" id="chatbotMessages">
+        <div class="message bot">
+          <div class="message-avatar">🤖</div>
+          <div class="message-bubble">
+            ¡Hola! Soy tu asistente médico. Puedo ayudarte con:
+            <div class="mt-2 space-y-1">
+              <div class="flex items-center text-sm">
+                <span class="mr-2">🩺</span> Información de pacientes
+              </div>
+              <div class="flex items-center text-sm">
+                <span class="mr-2">📅</span> Consulta de citas
+              </div>
+              <div class="flex items-center text-sm">
+                <span class="mr-2">👨‍⚕️</span> Datos de doctores
+              </div>
+              <div class="flex items-center text-sm">
+                <span class="mr-2">💊</span> Stock de medicamentos
+              </div>
+              <div class="flex items-center text-sm">
+                <span class="mr-2">📊</span> Estadísticas
+              </div>
+            </div>
+            <div class="mt-3 p-2 bg-blue-50 rounded-lg">
+              <div class="text-sm text-blue-800">
+                <strong>💡 Prueba decir:</strong><br />
+                "¿Cuántos pacientes hay?" o<br />
+                "Busca paciente con cédula 1234567890"
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="typing-indicator">
+          <div class="message-avatar">🤖</div>
+          <div class="typing-dots">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chatbot-input">
+        <div class="chatbot-input-group">
+          <button id="chatbotVoiceBtn" class="chatbot-voice-btn" title="Hablar">
+            <i class="fas fa-microphone"></i>
+          </button>
+          <input
+            type="text"
+            id="chatbotInput"
+            class="chatbot-input-field"
+            placeholder="Escribe tu consulta..."
+          />
+          <button id="chatbotSendBtn" class="chatbot-send-btn" title="Enviar">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estado de voz -->
+<div id="chatbotVoiceStatus" class="chatbot-voice-status">
+  <i class="fas fa-microphone"></i>
+  <span>Escuchando...</span>
+</div>
+
+<script src="{% static 'js/chatbot/widget.js' %}"></script>

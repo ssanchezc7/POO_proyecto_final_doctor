@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Asignaciones de Permisos - SaludTotal{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<div class="w-full px-4 py-6 min-h-screen">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-lg shadow-lg mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold">Gestión de Permisos</h1>
+                <p class="text-blue-100 mt-1">
+                    Administra los permisos de grupos sobre módulos del sistema
+                </p>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold">
+                    {{ group_module_permissions|length }}
+                </div>
+                <div class="text-sm text-blue-100">Total Asignaciones</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de búsqueda y acciones -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <!-- Búsqueda -->
+            <div class="flex-1 max-w-md">
+                <form method="GET" class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ request.GET.q }}"
+                        placeholder="Buscar grupos o módulos..."
+                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                    />
+                </form>
+            </div>
+            <!-- Botones de acción -->
+            <div class="flex gap-2">
+                {% if 'add_groupmodulepermission' in permissions %}
+                <a
+                    href="{{ create_url }}"
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm"
+                >
+                    <i class="fas fa-plus mr-2"></i>
+                    Nueva Asignación
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de asignaciones -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden w-full">
+        <div class="overflow-x-auto w-full">
+            <table class="w-full divide-y divide-gray-200 dark:divide-gray-700 min-w-full">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                            #
+                        </th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/4">
+                            Grupo
+                        </th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/4">
+                            Módulo
+                        </th>
+                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell w-1/6">
+                            Menú
+                        </th>
+                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell w-1/6">
+                            Permisos
+                        </th>
+                        <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/6">
+                            Acciones
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for gmp in group_module_permissions %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
+                        <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                            {{ gmp.id }}
+                        </td>
+                        <td class="px-3 py-2">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900 rounded flex items-center justify-center mr-3">
+                                    <i class="fas fa-users text-green-600 dark:text-green-400 text-xs"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ gmp.group.name }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 md:hidden">
+                                        {{ gmp.module.name }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-3 py-2">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded flex items-center justify-center mr-3">
+                                    <i class="{{ gmp.module.icon }} text-blue-600 dark:text-blue-400 text-xs"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ gmp.module.name }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                        {{ gmp.module.url }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-2 py-2 whitespace-nowrap hidden md:table-cell">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                                {{ gmp.module.menu.name }}
+                            </span>
+                        </td>
+                        <td class="px-2 py-2 whitespace-nowrap hidden lg:table-cell">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                {{ gmp.permissions.count }}
+                            </span>
+                        </td>
+                        <td class="px-2 py-2 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex items-center justify-end space-x-1">
+                                {% if 'change_groupmodulepermission' in permissions %}
+                                <a
+                                    href="{% url 'security:group_module_permission_update' gmp.pk %}"
+                                    class="inline-flex items-center px-1.5 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors duration-200 text-xs"
+                                    title="Editar"
+                                >
+                                    <i class="fas fa-edit text-xs"></i>
+                                </a>
+                                {% endif %}
+                                {% if 'delete_groupmodulepermission' in permissions %}
+                                <button
+                                    onclick="confirmDelete('{{ gmp.pk }}', '{{ gmp.group.name }} - {{ gmp.module.name }}')"
+                                    class="inline-flex items-center px-1.5 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors duration-200 text-xs"
+                                    title="Eliminar"
+                                >
+                                    <i class="fas fa-trash text-xs"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-lock text-4xl text-gray-400 mb-4"></i>
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                                    No hay asignaciones de permisos
+                                </h3>
+                                <p class="text-gray-500 dark:text-gray-400 mb-4">
+                                    No se encontraron asignaciones de permisos en el sistema.
+                                </p>
+                                <div class="space-x-2">
+                                    {% if 'add_groupmodulepermission' in permissions %}
+                                    <a
+                                        href="{{ create_url }}"
+                                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                                    >
+                                        <i class="fas fa-plus mr-2"></i>
+                                        Primera asignación
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginación reutilizable -->
+    {% include 'components/pagination.html' %}
+
+    <!-- Botones de navegación -->
+    <div class="flex justify-center items-center mt-6">
+        <a
+            href="{% url 'home' %}"
+            class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-sm"
+        >
+            <i class="fas fa-home mr-2"></i>
+            Ir al Inicio
+        </a>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <div class="sm:flex sm:items-start">
+                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900 sm:mx-0 sm:h-10 sm:w-10">
+                    <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400"></i>
+                </div>
+                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                        Confirmar Eliminación
+                    </h3>
+                    <div class="mt-2">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            ¿Estás seguro que deseas eliminar la asignación de permisos para
+                            <span id="assignmentName" class="font-semibold"></span>? Esta
+                            acción no se puede deshacer.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                <form id="deleteForm" method="POST" class="inline">
+                    {% csrf_token %}
+                    <button
+                        type="submit"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-200"
+                    >
+                        <i class="fas fa-trash mr-2"></i>
+                        Eliminar
+                    </button>
+                </form>
+                <button
+                    type="button"
+                    onclick="closeDeleteModal()"
+                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm transition-colors duration-200"
+                >
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDelete(gmpId, assignmentName) {
+        document.getElementById("assignmentName").textContent = assignmentName;
+        document.getElementById("deleteForm").action = `/auth/group_module_permission_delete/${gmpId}/`;
+        document.getElementById("deleteModal").classList.remove("hidden");
+    }
+
+    function closeDeleteModal() {
+        document.getElementById("deleteModal").classList.add("hidden");
+    }
+
+    // Cerrar modal con ESC
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            closeDeleteModal();
+        }
+    });
+
+    // Cerrar modal al hacer clic fuera
+    document.getElementById("deleteModal").addEventListener("click", function (event) {
+        if (event.target === this) {
+            closeDeleteModal();
+        }
+    });
+
+    // Auto submit del formulario de búsqueda con debounce
+    const searchInput = document.querySelector('input[name="q"]');
+    if (searchInput) {
+        searchInput.addEventListener("input", function () {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.form.submit();
+            }, 800);
+        });
+    }
+</script>
+
+{% endblock %}

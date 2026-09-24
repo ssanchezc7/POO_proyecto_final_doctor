@@ -1,0 +1,962 @@
+{% extends 'base.html' %} {% block title %} Calendario de Citas Médicas -
+SaludTotal {% endblock %} {% block content %} {% load static %}
+
+<div class="container-fluid mx-auto px-4 py-6">
+  <!-- Header -->
+  <div
+    class="bg-gradient-to-r from-purple-500 to-blue-600 text-white p-6 rounded-lg shadow-lg mb-6"
+  >
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold">Calendario de Citas Médicas</h1>
+        <p class="text-purple-100 mt-1">
+          Vista de calendario para gestionar citas médicas
+        </p>
+      </div>
+      <div class="text-right">
+        <i class="fas fa-calendar-alt text-4xl text-purple-100"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controles de navegación y filtros -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 lg:p-6 mb-6">
+    <div
+      class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4"
+    >
+      <!-- Filtro de Doctor -->
+      <div class="flex-1 w-full xl:max-w-md">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          >Doctor</label
+        >
+        {{ form_calendario.doctor }}
+      </div>
+
+      <!-- Navegación de fecha -->
+      <div
+        class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full xl:w-auto"
+      >
+        <div class="flex items-center space-x-2">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >Año:</label
+          >
+          {{ form_calendario.anio }}
+        </div>
+        <div class="flex items-center space-x-2">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >Mes:</label
+          >
+          {{ form_calendario.mes }}
+        </div>
+      </div>
+
+      <!-- Botones de navegación -->
+      <div class="flex items-center justify-between w-full xl:w-auto space-x-2">
+        <a
+          href="?doctor={{ request.GET.doctor }}&anio={{ mes_anterior.anio }}&mes={{ mes_anterior.mes }}"
+          class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
+        >
+          <i class="fas fa-chevron-left"></i>
+        </a>
+        <span
+          class="px-4 py-2 text-lg font-semibold text-gray-900 dark:text-white text-center flex-1 xl:flex-none"
+          >{{ mes_nombre }}</span
+        >
+        <a
+          href="?doctor={{ request.GET.doctor }}&anio={{ mes_siguiente.anio }}&mes={{ mes_siguiente.mes }}"
+          class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
+        >
+          <i class="fas fa-chevron-right"></i>
+        </a>
+      </div>
+
+      <!-- Botón volver a lista -->
+      <div class="w-full xl:w-auto">
+        <a
+          href="{% url 'doctor:cita_medica_list' %}"
+          class="w-full xl:w-auto inline-flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
+        >
+          <i class="fas fa-list mr-2"></i>
+          Ver Lista
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leyenda -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
+    <div class="flex flex-wrap items-center justify-center gap-6 text-sm">
+      <div class="flex items-center">
+        <div class="w-4 h-4 bg-green-400 rounded-full mr-2"></div>
+        <span class="text-gray-700 dark:text-gray-300"
+          >Con horarios disponibles</span
+        >
+      </div>
+      <div class="flex items-center">
+        <div class="w-4 h-4 bg-yellow-400 rounded-full mr-2"></div>
+        <span class="text-gray-700 dark:text-gray-300">Con citas ocupadas</span>
+      </div>
+      <div class="flex items-center">
+        <div class="w-4 h-4 bg-gray-400 rounded-full mr-2"></div>
+        <span class="text-gray-700 dark:text-gray-300">Sin horario</span>
+      </div>
+      <div class="flex items-center">
+        <i class="fas fa-mouse-pointer text-gray-500 mr-2"></i>
+        <span class="text-gray-700 dark:text-gray-300"
+          >Haz clic en un día para ver horarios</span
+        >
+      </div>
+    </div>
+  </div>
+
+  <!-- Mensaje cuando no hay doctor seleccionado -->
+  <div
+    id="mensaje_sin_doctor"
+    class="bg-blue-50 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-800 rounded-lg p-6 text-center"
+  >
+    <i class="fas fa-user-md text-4xl text-blue-400 mb-4"></i>
+    <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">
+      Selecciona un Doctor
+    </h3>
+    <p class="text-blue-700 dark:text-blue-300">
+      Elige un doctor del menú desplegable para ver su calendario de citas
+    </p>
+  </div>
+
+  <!-- Calendario -->
+  <div id="calendario_container" class="hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+      <!-- Días de la semana -->
+      <div class="grid grid-cols-7 bg-gray-50 dark:bg-gray-700">
+        <div
+          class="p-2 lg:p-3 text-center text-xs lg:text-sm font-semibold text-gray-600 dark:text-gray-300"
+        >
+          Dom
+        </div>
+        <div
+          class="p-2 lg:p-3 text-center text-xs lg:text-sm font-semibold text-gray-600 dark:text-gray-300"
+        >
+          Lun
+        </div>
+        <div
+          class="p-2 lg:p-3 text-center text-xs lg:text-sm font-semibold text-gray-600 dark:text-gray-300"
+        >
+          Mar
+        </div>
+        <div
+          class="p-2 lg:p-3 text-center text-xs lg:text-sm font-semibold text-gray-600 dark:text-gray-300"
+        >
+          Mié
+        </div>
+        <div
+          class="p-2 lg:p-3 text-center text-xs lg:text-sm font-semibold text-gray-600 dark:text-gray-300"
+        >
+          Jue
+        </div>
+        <div
+          class="p-2 lg:p-3 text-center text-xs lg:text-sm font-semibold text-gray-600 dark:text-gray-300"
+        >
+          Vie
+        </div>
+        <div
+          class="p-2 lg:p-3 text-center text-xs lg:text-sm font-semibold text-gray-600 dark:text-gray-300"
+        >
+          Sáb
+        </div>
+      </div>
+
+      <!-- Grid del calendario -->
+      <div
+        id="calendario_grid"
+        class="grid grid-cols-7 divide-x divide-y divide-gray-200 dark:divide-gray-700"
+      >
+        <!-- Los días se cargarán aquí dinámicamente -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading_calendario" class="hidden text-center py-8">
+    <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+    <p class="text-lg text-gray-500 dark:text-gray-400">
+      Cargando calendario...
+    </p>
+  </div>
+</div>
+
+<!-- Modal para crear cita -->
+<div
+  id="modal_nueva_cita"
+  class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 hidden z-50"
+>
+  <div
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+  >
+    <div class="p-4 lg:p-6">
+      <!-- Header del modal -->
+      <div
+        class="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700"
+      >
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <i class="fas fa-plus-circle mr-2 text-green-600"></i>
+          Nueva Cita Médica
+        </h3>
+        <button
+          type="button"
+          id="btn_cerrar_modal_cita"
+          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Formulario de nueva cita -->
+      <form id="form_nueva_cita" class="mt-4">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+          <!-- Información de la cita -->
+          <div class="lg:col-span-2 xl:col-span-3">
+            <div
+              id="info_cita"
+              class="p-3 bg-blue-50 dark:bg-blue-900/50 rounded-lg mb-4"
+            >
+              <p class="text-sm text-blue-700 dark:text-blue-300">
+                <i class="fas fa-info-circle mr-1"></i>
+                <span id="info_fecha_hora"></span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Selección de paciente -->
+          <div class="lg:col-span-2 xl:col-span-2">
+            <label
+              for="select_paciente"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Paciente <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="select_paciente"
+              name="paciente_id"
+              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              required
+            >
+              <option value="">Seleccione un paciente</option>
+              <!-- Los pacientes se cargarán dinámicamente -->
+            </select>
+          </div>
+
+          <!-- Estado (nuevo campo) -->
+          <div class="lg:col-span-1 xl:col-span-1">
+            <label
+              for="select_estado"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Estado <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="select_estado"
+              name="estado"
+              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              required
+            >
+              <option value="PENDIENTE" selected>Pendiente</option>
+              <option value="CONFIRMADA">Confirmada</option>
+            </select>
+          </div>
+
+          <!-- Observaciones -->
+          <div class="lg:col-span-2 xl:col-span-3">
+            <label
+              for="textarea_observaciones"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Observaciones
+            </label>
+            <textarea
+              id="textarea_observaciones"
+              name="observaciones"
+              rows="3"
+              class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white resize-none"
+              placeholder="Observaciones adicionales para la cita..."
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Campos ocultos -->
+        <input type="hidden" id="hidden_doctor_id" name="doctor_id" value="" />
+        <input type="hidden" id="hidden_fecha" name="fecha" value="" />
+        <input type="hidden" id="hidden_hora" name="hora" value="" />
+
+        <!-- Botones de acción -->
+        <div
+          class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700"
+        >
+          <button
+            type="button"
+            id="btn_cancelar_cita"
+            class="w-full sm:w-auto px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-sm"
+          >
+            <i class="fas fa-save mr-2"></i>
+            Agendar Cita
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para ver detalles de cita -->
+<div
+  id="modal_detalle_cita"
+  class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 hidden z-50"
+>
+  <div
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+  >
+    <div class="p-4 lg:p-6">
+      <!-- Header del modal -->
+      <div
+        class="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700"
+      >
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <i class="fas fa-eye mr-2 text-blue-600"></i>
+          Detalle de Cita
+        </h3>
+        <button
+          type="button"
+          id="btn_cerrar_modal_detalle"
+          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Contenido del detalle -->
+      <div id="contenido_detalle_cita" class="mt-4">
+        <!-- El contenido se carga dinámicamente -->
+      </div>
+
+      <!-- Footer del modal -->
+      <div
+        class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700 mt-4"
+      >
+        <button
+          type="button"
+          id="btn_cerrar_detalle_footer"
+          class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const doctorSelect = document.getElementById("calendario_doctor");
+    const anioSelect = document.getElementById("calendario_anio");
+    const mesSelect = document.getElementById("calendario_mes");
+    const mensajeSinDoctor = document.getElementById("mensaje_sin_doctor");
+    const calendarioContainer = document.getElementById("calendario_container");
+    const loadingCalendario = document.getElementById("loading_calendario");
+    const calendarioGrid = document.getElementById("calendario_grid");
+
+    // Modales
+    const modalNuevaCita = document.getElementById("modal_nueva_cita");
+    const modalDetalleCita = document.getElementById("modal_detalle_cita");
+    const formNuevaCita = document.getElementById("form_nueva_cita");
+
+    // Variables globales
+    let calendarioData = null;
+    let pacientesData = null;
+
+    // Eventos de navegación
+    doctorSelect.addEventListener("change", cambiarDoctor);
+    anioSelect.addEventListener("change", cambiarPeriodo);
+    mesSelect.addEventListener("change", cambiarPeriodo);
+
+    // Eventos de modales
+    document
+      .getElementById("btn_cerrar_modal_cita")
+      .addEventListener("click", cerrarModalNuevaCita);
+    document
+      .getElementById("btn_cancelar_cita")
+      .addEventListener("click", cerrarModalNuevaCita);
+    document
+      .getElementById("btn_cerrar_modal_detalle")
+      .addEventListener("click", cerrarModalDetalleCita);
+    document
+      .getElementById("btn_cerrar_detalle_footer")
+      .addEventListener("click", cerrarModalDetalleCita);
+
+    // Evento del formulario
+    formNuevaCita.addEventListener("submit", crearCita);
+
+    // Cerrar modales al hacer click fuera
+    modalNuevaCita.addEventListener("click", function (e) {
+      if (e.target === modalNuevaCita) cerrarModalNuevaCita();
+    });
+    modalDetalleCita.addEventListener("click", function (e) {
+      if (e.target === modalDetalleCita) cerrarModalDetalleCita();
+    });
+
+    // Funciones principales
+    function cambiarDoctor(value) {
+      if (typeof value === "object") {
+        value = this.value;
+      }
+      if (value) {
+        cargarCalendario();
+      } else {
+        mostrarMensajeSinDoctor();
+      }
+    }
+
+    function cambiarPeriodo() {
+      if (doctorSelect.value) {
+        cargarCalendario();
+      }
+    }
+
+    function mostrarMensajeSinDoctor() {
+      mensajeSinDoctor.classList.remove("hidden");
+      calendarioContainer.classList.add("hidden");
+      loadingCalendario.classList.add("hidden");
+    }
+
+    function cargarCalendario() {
+      const doctorId = doctorSelect.value;
+      const anio = anioSelect.value;
+      const mes = mesSelect.value;
+
+      if (!doctorId) {
+        mostrarMensajeSinDoctor();
+        return;
+      }
+
+      mensajeSinDoctor.classList.add("hidden");
+      calendarioContainer.classList.add("hidden");
+      loadingCalendario.classList.remove("hidden");
+
+      const url = `{{ ajax_calendario_url }}?doctor=${doctorId}&anio=${anio}&mes=${mes}`;
+
+      fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+          loadingCalendario.classList.add("hidden");
+
+          if (data.error) {
+            console.error("Error:", data.error);
+            alert("Error al cargar calendario: " + data.error);
+            return;
+          }
+
+          calendarioData = data.calendario;
+          mostrarCalendario(data.calendario);
+          calendarioContainer.classList.remove("hidden");
+
+          // Cargar pacientes si no están cargados
+          if (!pacientesData) {
+            cargarPacientes();
+          }
+        })
+        .catch((error) => {
+          loadingCalendario.classList.add("hidden");
+          console.error("Error:", error);
+          alert("Error al cargar calendario: " + error.message);
+        });
+    }
+
+    function mostrarCalendario(calendario) {
+      calendarioGrid.innerHTML = "";
+
+      // Calcular el primer día del mes y días a mostrar antes
+      const primerDia = new Date(anioSelect.value, mesSelect.value - 1, 1);
+      const primerDiaSemana = primerDia.getDay(); // 0 = Domingo
+
+      // Agregar días vacíos al inicio
+      for (let i = 0; i < primerDiaSemana; i++) {
+        const diaVacio = document.createElement("div");
+        diaVacio.className = "p-2 h-32 bg-gray-50 dark:bg-gray-900";
+        calendarioGrid.appendChild(diaVacio);
+      }
+
+      // Agregar días del mes
+      calendario.forEach((diaData) => {
+        const diaElement = crearElementoDia(diaData);
+        calendarioGrid.appendChild(diaElement);
+      });
+    }
+
+    function crearElementoDia(diaData) {
+      const dia = document.createElement("div");
+      dia.className = `p-2 h-32 border-l border-b border-gray-200 dark:border-gray-700 ${
+        diaData.es_pasado
+          ? "bg-gray-50 dark:bg-gray-900"
+          : "bg-white dark:bg-gray-800"
+      } overflow-y-auto cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors`;
+
+      // Número del día
+      const numeroDia = document.createElement("div");
+      numeroDia.className = `text-sm font-semibold mb-1 ${
+        diaData.es_pasado ? "text-gray-400" : "text-gray-900 dark:text-white"
+      }`;
+      numeroDia.textContent = diaData.dia;
+      dia.appendChild(numeroDia);
+
+      // Indicador si no tiene horario
+      if (!diaData.tiene_horario && !diaData.es_pasado) {
+        const sinHorario = document.createElement("div");
+        sinHorario.className =
+          "text-xs text-gray-500 dark:text-gray-400 italic";
+        sinHorario.textContent = "Sin horario";
+        dia.appendChild(sinHorario);
+      }
+
+      // Mostrar resumen de citas
+      if (diaData.tiene_horario && !diaData.es_pasado) {
+        const totalCitas = diaData.citas.length;
+        const totalHorarios = diaData.horarios_disponibles.length;
+        const disponibles = diaData.horarios_disponibles.filter(
+          (h) => h.estado === "disponible"
+        ).length;
+
+        const resumen = document.createElement("div");
+        resumen.className = "text-xs text-gray-600 dark:text-gray-400 mt-2";
+        resumen.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span>${totalCitas} citas</span>
+            <span>${disponibles} disponibles</span>
+          </div>
+        `;
+        dia.appendChild(resumen);
+
+        // Indicador visual del estado del día
+        const indicador = document.createElement("div");
+        indicador.className = "mt-2 flex space-x-1";
+
+        if (disponibles > 0) {
+          const verde = document.createElement("div");
+          verde.className = "w-2 h-2 bg-green-400 rounded-full";
+          indicador.appendChild(verde);
+        }
+
+        if (totalCitas > 0) {
+          const ocupado = document.createElement("div");
+          ocupado.className = "w-2 h-2 bg-yellow-400 rounded-full";
+          indicador.appendChild(ocupado);
+        }
+
+        dia.appendChild(indicador);
+
+        // Agregar evento click para mostrar horarios
+        dia.addEventListener("click", (e) => {
+          e.stopPropagation();
+          mostrarHorariosDia(diaData);
+        });
+      }
+
+      return dia;
+    }
+
+    function getEstadoClasses(estado) {
+      switch (estado) {
+        case "disponible":
+          return "bg-green-100 text-green-800 border border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800";
+        case "ocupado":
+          return "bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-800";
+        case "atendido":
+          return "bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-800";
+        default:
+          return "bg-gray-100 text-gray-800 border border-gray-200 dark:bg-gray-900 dark:text-gray-200 dark:border-gray-800";
+      }
+    }
+
+    function abrirModalNuevaCita(fecha, hora) {
+      const doctorNombre =
+        doctorSelect.options[doctorSelect.selectedIndex].text;
+      const fechaFormateada = new Date(fecha).toLocaleDateString("es-ES");
+
+      document.getElementById(
+        "info_fecha_hora"
+      ).textContent = `Dr. ${doctorNombre} - ${fechaFormateada} a las ${hora}`;
+
+      document.getElementById("hidden_doctor_id").value = doctorSelect.value;
+      document.getElementById("hidden_fecha").value = fecha;
+      document.getElementById("hidden_hora").value = hora;
+
+      modalNuevaCita.classList.remove("hidden");
+    }
+
+    function cerrarModalNuevaCita() {
+      modalNuevaCita.classList.add("hidden");
+      formNuevaCita.reset();
+    }
+
+    function mostrarDetalleCita(cita) {
+      // Cerrar modal de horarios si está abierto
+      window.cerrarModalHorarios();
+
+      const contenido = document.getElementById("contenido_detalle_cita");
+      contenido.innerHTML = `
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Paciente:</label>
+                        <p class="text-sm text-gray-900 dark:text-white">${
+                          cita.paciente
+                        }</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Hora:</label>
+                        <p class="text-sm text-gray-900 dark:text-white">${
+                          cita.hora
+                        }</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Estado:</label>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getEstadoClasses(
+                          cita.estado
+                        )}">
+                            ${
+                              cita.estado.charAt(0).toUpperCase() +
+                              cita.estado.slice(1)
+                            }
+                        </span>
+                    </div>
+                </div>
+                ${
+                  cita.observaciones
+                    ? `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Observaciones:</label>
+                        <p class="text-sm text-gray-900 dark:text-white">${cita.observaciones}</p>
+                    </div>
+                `
+                    : ""
+                }
+            </div>
+        `;
+      modalDetalleCita.classList.remove("hidden");
+    }
+
+    function cerrarModalDetalleCita() {
+      modalDetalleCita.classList.add("hidden");
+    }
+
+    function cargarPacientes() {
+      const selectPaciente = document.getElementById("select_paciente");
+
+      // Mostrar indicador de carga
+      selectPaciente.innerHTML =
+        '<option value="">Cargando pacientes...</option>';
+
+      // Cargar pacientes desde el servidor
+      fetch('{% url "core:paciente_find" %}')
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Error al cargar pacientes");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Respuesta del servidor:", data); // Debug
+          selectPaciente.innerHTML =
+            '<option value="">Seleccione un paciente</option>';
+
+          // Manejar respuesta exitosa
+          if (data.success && data.pacientes) {
+            pacientesData = data.pacientes;
+
+            data.pacientes.forEach((paciente) => {
+              const option = document.createElement("option");
+              option.value = paciente.id;
+              option.textContent = `${paciente.nombre_completo} - ${
+                paciente.cedula_ecuatoriana || paciente.dni || "Sin documento"
+              }`;
+              selectPaciente.appendChild(option);
+            });
+
+            console.log(`Cargados ${data.pacientes.length} pacientes`); // Debug
+          } else {
+            console.error(
+              "Error en la respuesta:",
+              data.message || "Respuesta inválida"
+            );
+            selectPaciente.innerHTML =
+              '<option value="">Error al cargar pacientes</option>';
+          }
+        })
+        .catch((error) => {
+          console.error("Error al cargar pacientes:", error);
+          selectPaciente.innerHTML =
+            '<option value="">Error al cargar pacientes</option>';
+        });
+    }
+
+    function crearCita(e) {
+      e.preventDefault();
+
+      const formData = new FormData(formNuevaCita);
+      const data = {
+        doctor_id: formData.get("doctor_id"),
+        paciente_id: formData.get("paciente_id"),
+        fecha: formData.get("fecha"),
+        hora: formData.get("hora"),
+        observaciones: formData.get("observaciones") || "",
+      };
+
+      fetch("{{ ajax_crear_cita_url }}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]")
+            .value,
+        },
+        body: JSON.stringify(data),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            alert(data.mensaje);
+            cerrarModalNuevaCita();
+            cargarCalendario(); // Recargar calendario
+          } else {
+            alert("Error: " + (data.error || "Error desconocido"));
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("Error al crear la cita: " + error.message);
+        });
+    }
+
+    function mostrarHorariosDia(diaData) {
+      const fechaFormateada = new Date(diaData.fecha).toLocaleDateString(
+        "es-ES"
+      );
+      const doctorNombre =
+        doctorSelect.options[doctorSelect.selectedIndex].text;
+
+      // Crear modal para horarios
+      const modalHorarios = document.createElement("div");
+      modalHorarios.className =
+        "fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50";
+      modalHorarios.id = "modal_horarios_dia";
+
+      modalHorarios.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div class="p-6">
+            <!-- Header -->
+            <div class="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="fas fa-calendar-day mr-2 text-blue-600"></i>
+                Horarios - ${fechaFormateada}
+              </h3>
+              <button type="button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onclick="window.cerrarModalHorarios()">
+                <i class="fas fa-times text-xl"></i>
+              </button>
+            </div>
+            
+            <!-- Información del doctor -->
+            <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/50 rounded-lg">
+              <p class="text-sm text-blue-700 dark:text-blue-300">
+                <i class="fas fa-user-md mr-2"></i>
+                Dr. ${doctorNombre}
+              </p>
+            </div>
+            
+            <!-- Lista de horarios en grid -->
+            <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3" id="lista_horarios">
+              ${generarListaHorarios(diaData)}
+            </div>
+            
+            <!-- Footer -->
+            <div class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
+              <button type="button" onclick="window.cerrarModalHorarios()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200">
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modalHorarios);
+
+      // Cerrar modal al hacer clic fuera
+      modalHorarios.addEventListener("click", function (e) {
+        if (e.target === modalHorarios) {
+          window.cerrarModalHorarios();
+        }
+      });
+    }
+
+    function generarListaHorarios(diaData) {
+      let html = "";
+
+      // Crear un mapa de citas por hora
+      const citasPorHora = {};
+      diaData.citas.forEach((cita) => {
+        citasPorHora[cita.hora] = cita;
+      });
+
+      // Generar horarios disponibles
+      diaData.horarios_disponibles.forEach((horario) => {
+        const cita = citasPorHora[horario.hora];
+
+        if (cita) {
+          // Horario ocupado
+          html += `
+            <div class="p-3 bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-200 dark:border-yellow-800 rounded-lg cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-900/70 transition-colors" onclick="window.mostrarDetalleCitaDesdeHorario('${
+              cita.paciente
+            }', '${cita.hora}', '${cita.estado}', '${
+            cita.observaciones || ""
+          }')">
+              <div class="text-center">
+                <div class="font-bold text-yellow-800 dark:text-yellow-200 text-lg">${
+                  horario.hora
+                }</div>
+                <div class="text-xs text-yellow-700 dark:text-yellow-300 mt-1 truncate">${
+                  cita.paciente
+                }</div>
+                <div class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                  <i class="fas fa-user-clock"></i> ${cita.estado}
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          // Horario disponible
+          html += `
+            <div class="p-3 bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-800 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/70 transition-colors" onclick="window.abrirModalNuevaCitaDesdeHorario('${diaData.fecha}', '${horario.hora}')">
+              <div class="text-center">
+                <div class="font-bold text-green-800 dark:text-green-200 text-lg">${horario.hora}</div>
+                <div class="text-xs text-green-700 dark:text-green-300 mt-1">
+                  <i class="fas fa-plus-circle"></i> Disponible
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      });
+
+      return html;
+    }
+
+    function cerrarModalHorarios() {
+      window.cerrarModalHorarios();
+    }
+
+    // Inicialización
+    if (doctorSelect.value) {
+      cargarCalendario();
+    } else {
+      mostrarMensajeSinDoctor();
+    }
+  });
+
+  // Funciones globales para ser llamadas desde los controles
+  window.cambiarDoctor = function (value) {
+    const evento = new CustomEvent("change");
+    document.getElementById("calendario_doctor").dispatchEvent(evento);
+  };
+
+  window.cambiarPeriodo = function () {
+    const evento = new CustomEvent("change");
+    document.getElementById("calendario_anio").dispatchEvent(evento);
+  };
+
+  // Funciones globales para los modales de horarios
+  window.cerrarModalHorarios = function () {
+    const modal = document.getElementById("modal_horarios_dia");
+    if (modal) {
+      modal.remove();
+    }
+  };
+
+  window.abrirModalNuevaCitaDesdeHorario = function (fecha, hora) {
+    // Primero cerrar el modal de horarios
+    window.cerrarModalHorarios();
+
+    // Luego abrir el modal de nueva cita
+    const doctorSelect = document.getElementById("calendario_doctor");
+    const doctorNombre = doctorSelect.options[doctorSelect.selectedIndex].text;
+    const fechaFormateada = new Date(fecha).toLocaleDateString("es-ES");
+
+    // Actualizar la información de la cita
+    document.getElementById(
+      "info_fecha_hora"
+    ).textContent = `Dr. ${doctorNombre} - ${fechaFormateada} a las ${hora}`;
+
+    // Llenar los campos ocultos
+    document.getElementById("hidden_doctor_id").value = doctorSelect.value;
+    document.getElementById("hidden_fecha").value = fecha;
+    document.getElementById("hidden_hora").value = hora;
+
+    // Mostrar el modal
+    document.getElementById("modal_nueva_cita").classList.remove("hidden");
+  };
+
+  window.mostrarDetalleCitaDesdeHorario = function (
+    paciente,
+    hora,
+    estado,
+    observaciones
+  ) {
+    const cita = {
+      paciente: paciente,
+      hora: hora,
+      estado: estado,
+      observaciones: observaciones,
+    };
+
+    // Cerrar modal de horarios si está abierto
+    window.cerrarModalHorarios();
+
+    const contenido = document.getElementById("contenido_detalle_cita");
+    contenido.innerHTML = `
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Paciente:</label>
+            <p class="text-sm text-gray-900 dark:text-white">${paciente}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Hora:</label>
+            <p class="text-sm text-gray-900 dark:text-white">${hora}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Estado:</label>
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium">
+              ${estado.charAt(0).toUpperCase() + estado.slice(1)}
+            </span>
+          </div>
+        </div>
+        ${
+          observaciones
+            ? `
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Observaciones:</label>
+            <p class="text-sm text-gray-900 dark:text-white">${observaciones}</p>
+          </div>
+        `
+            : ""
+        }
+      </div>
+    `;
+    document.getElementById("modal_detalle_cita").classList.remove("hidden");
+  };
+</script>
+
+{% endblock %}

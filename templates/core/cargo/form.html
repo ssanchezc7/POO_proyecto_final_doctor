@@ -1,0 +1,399 @@
+{% extends 'base.html' %} {% block title %} {% if object %} Editar Cargo {% else
+%} Nuevo Cargo {% endif %} - SaludTotal {% endblock %} {% block content %} {%
+load static %}
+
+<!-- Contenedor principal con altura controlada -->
+<div class="min-h-screen bg-gray-50 dark:bg-white-900">
+  <div class="w-full px-6 py-8">
+    <!-- Header -->
+    <div
+      class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 sm:p-8 rounded-lg shadow-lg mb-8"
+    >
+      <div
+        class="flex flex-col sm:flex-row items-start sm:items-center justify-between"
+      >
+        <div class="flex-1">
+          <h1 class="text-2xl sm:text-3xl font-bold">
+            <i
+              class="fas fa-{% if object %}edit{% else %}plus{% endif %} mr-2"
+            ></i>
+            {% if object %} Editar Cargo {% else %} Nuevo Cargo {% endif %}
+          </h1>
+          <p class="text-purple-100 mt-1 text-sm sm:text-base">
+            {% if object %} Modifica la información del cargo "{{ object.nombre
+            }}" {% else %} Crea un nuevo cargo en el sistema {% endif %}
+          </p>
+        </div>
+        <div class="text-right mt-4 sm:mt-0">
+          <div class="text-xl sm:text-2xl font-bold">
+            <i class="fas fa-briefcase"></i>
+          </div>
+          <div class="text-xs sm:text-sm text-purple-100">Cargo</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario -->
+    <form method="post" class="space-y-6" id="cargoForm">
+      {% csrf_token %}
+
+      <!-- Contenedor principal del formulario -->
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden"
+      >
+        <!-- Vista previa del cargo -->
+        <div
+          class="bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-600"
+        >
+          <div class="text-center">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-full w-16 sm:w-20 h-16 sm:h-20 mx-auto flex items-center justify-center shadow-sm border border-gray-200 dark:border-gray-600 mb-3"
+            >
+              <div class="text-center">
+                <i
+                  class="fas fa-briefcase text-2xl sm:text-3xl text-purple-600 dark:text-purple-400"
+                ></i>
+                <div
+                  id="cargoPreview"
+                  class="text-xs sm:text-sm font-bold text-purple-600 dark:text-purple-400 mt-1"
+                >
+                  {% if object %}{{ object.nombre }}{% else %}--{% endif %}
+                </div>
+              </div>
+            </div>
+            <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+              Vista previa del cargo
+            </h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              El cargo se actualizará mientras escribes
+            </p>
+          </div>
+        </div>
+
+        <!-- Campos del formulario -->
+        <div class="p-4 sm:p-6">
+          <!-- Grid de campos principales -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+            <!-- Campo Nombre -->
+            <div>
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                <i class="fas fa-briefcase text-purple-500 mr-1"></i>
+                {{ form.nombre.label }}
+                <span class="text-red-500 ml-1">*</span>
+              </label>
+              <div class="relative">{{ form.nombre }}</div>
+              {% if form.nombre.errors %}
+              <div class="mt-1 text-red-600 text-sm">
+                {% for error in form.nombre.errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+              {% endif %}
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <i class="fas fa-info-circle mr-1"></i>
+                Nombre descriptivo del cargo
+              </p>
+            </div>
+
+            <!-- Campo Descripción -->
+            <div>
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                <i class="fas fa-align-left text-purple-500 mr-1"></i>
+                {{ form.descripcion.label }}
+              </label>
+              <div class="relative">{{ form.descripcion }}</div>
+              {% if form.descripcion.errors %}
+              <div class="mt-1 text-red-600 text-sm">
+                {% for error in form.descripcion.errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+              {% endif %}
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <i class="fas fa-info-circle mr-1"></i>
+                Descripción detallada del cargo (opcional)
+              </p>
+            </div>
+          </div>
+
+          <!-- Campo Estado -->
+          <div class="mb-6">
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              <i class="fas fa-toggle-on text-purple-500 mr-1"></i>
+              Estado del cargo
+            </label>
+            <div class="flex items-center">
+              {{ form.activo }}
+              <label
+                for="{{ form.activo.id_for_label }}"
+                class="ml-2 text-sm text-gray-600 dark:text-gray-400"
+              >
+                {{ form.activo.label }}
+              </label>
+            </div>
+            {% if form.activo.errors %}
+            <div class="mt-1 text-red-600 text-sm">
+              {% for error in form.activo.errors %}
+              <p>{{ error }}</p>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <i class="fas fa-info-circle mr-1"></i>
+              Determina si el cargo está disponible para usar
+            </p>
+          </div>
+
+          <!-- Información adicional -->
+          {% if object %}
+          <div
+            class="bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-400 p-4 mb-6"
+          >
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-blue-400"></i>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-blue-700 dark:text-blue-200">
+                  <strong>Información:</strong> Este cargo fue creado {% if
+                  object.created_at %}el {{ object.created_at|date:"d/m/Y" }}{%
+                  endif %}. {% if not object.activo %} <br /><strong
+                    >Nota:</strong
+                  >
+                  El cargo está marcado como inactivo. {% endif %}
+                </p>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Sección de cargos comunes (ayuda visual) -->
+          <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+            <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">
+              <i class="fas fa-question-circle text-gray-500 mr-1"></i>
+              Cargos más comunes:
+            </h4>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button
+                type="button"
+                onclick="selectCargo('Médico General')"
+                class="px-2 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:border-purple-300 dark:hover:border-purple-600 transition-colors duration-200"
+              >
+                Médico General
+              </button>
+              <button
+                type="button"
+                onclick="selectCargo('Enfermero/a')"
+                class="px-2 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:border-purple-300 dark:hover:border-purple-600 transition-colors duration-200"
+              >
+                Enfermero/a
+              </button>
+              <button
+                type="button"
+                onclick="selectCargo('Especialista')"
+                class="px-2 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:border-purple-300 dark:hover:border-purple-600 transition-colors duration-200"
+              >
+                Especialista
+              </button>
+              <button
+                type="button"
+                onclick="selectCargo('Administrativo')"
+                class="px-2 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:border-purple-300 dark:hover:border-purple-600 transition-colors duration-200"
+              >
+                Administrativo
+              </button>
+              <button
+                type="button"
+                onclick="selectCargo('Recepcionista')"
+                class="px-2 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:border-purple-300 dark:hover:border-purple-600 transition-colors duration-200"
+              >
+                Recepcionista
+              </button>
+              <button
+                type="button"
+                onclick="selectCargo('Auxiliar')"
+                class="px-2 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:border-purple-300 dark:hover:border-purple-600 transition-colors duration-200"
+              >
+                Auxiliar
+              </button>
+              <button
+                type="button"
+                onclick="selectCargo('Técnico')"
+                class="px-2 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:border-purple-300 dark:hover:border-purple-600 transition-colors duration-200"
+              >
+                Técnico
+              </button>
+              <button
+                type="button"
+                onclick="selectCargo('Director/a')"
+                class="px-2 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900 hover:border-purple-300 dark:hover:border-purple-600 transition-colors duration-200"
+              >
+                Director/a
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Haz clic en cualquier cargo para seleccionarlo automáticamente
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de acción -->
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 sticky bottom-0 z-10"
+      >
+        <div
+          class="flex flex-col sm:flex-row justify-end items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3"
+        >
+          <a
+            href="{% url 'core:cargo_list' %}"
+            class="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
+          >
+            <i class="fas fa-times mr-2"></i>
+            Cancelar
+          </a>
+          <button
+            type="submit"
+            id="submitBtn"
+            class="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 shadow-sm"
+          >
+            <i class="fas fa-save mr-2"></i>
+            {% if object %} Actualizar Cargo {% else %} Crear Cargo {% endif %}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<style>
+  /* Estilos adicionales para mejorar la responsividad */
+  @media (max-height: 600px) {
+    .container {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+
+    .bg-gradient-to-r {
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .space-y-6 > * + * {
+      margin-top: 1rem;
+    }
+  }
+
+  /* Asegurar que los inputs se adapten correctamente */
+  input[type="text"],
+  textarea {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Mejorar el scroll en dispositivos móviles */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Hacer que los botones de cargos comunes sean más responsivos */
+  @media (max-width: 640px) {
+    .grid-cols-4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Referencias a elementos
+    const nombreInput = document.getElementById(
+      "{{ form.nombre.id_for_label }}"
+    );
+    const cargoPreview = document.getElementById("cargoPreview");
+    const form = document.getElementById("cargoForm");
+    const submitBtn = document.getElementById("submitBtn");
+
+    // Función para actualizar vista previa del cargo
+    function updateCargoPreview() {
+      const nombreValue = nombreInput.value.trim();
+      if (nombreValue) {
+        cargoPreview.textContent = nombreValue;
+      } else {
+        cargoPreview.textContent = "--";
+      }
+    }
+
+    // Función para seleccionar un cargo común
+    window.selectCargo = function (cargo) {
+      nombreInput.value = cargo;
+      updateCargoPreview();
+      nombreInput.focus();
+    };
+
+    // Inicializar vista previa del cargo
+    if (nombreInput) {
+      // Actualizar vista previa al cargar (para edición)
+      updateCargoPreview();
+
+      // Actualizar vista previa cuando cambie el input
+      nombreInput.addEventListener("input", updateCargoPreview);
+      nombreInput.addEventListener("keyup", updateCargoPreview);
+      nombreInput.addEventListener("change", updateCargoPreview);
+    }
+
+    // Manejar envío del formulario
+    if (form && submitBtn) {
+      form.addEventListener("submit", function (e) {
+        // Deshabilitar el botón para evitar doble envío
+        submitBtn.disabled = true;
+        submitBtn.innerHTML =
+          '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+
+        // Re-habilitar después de 3 segundos por si hay errores
+        setTimeout(() => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML =
+            '{% if object %}<i class="fas fa-save mr-2"></i>Actualizar Cargo{% else %}<i class="fas fa-save mr-2"></i>Crear Cargo{% endif %}';
+        }, 3000);
+      });
+    }
+
+    // Auto-focus en el primer campo con error
+    const firstError = document.querySelector(".text-red-600");
+    if (firstError) {
+      const errorField = firstError
+        .closest("div")
+        .querySelector("input, textarea");
+      if (errorField) {
+        errorField.focus();
+        errorField.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    } else {
+      // Si no hay errores, focus en el primer campo
+      const firstField = document.querySelector(
+        "#{{ form.nombre.id_for_label }}"
+      );
+      if (firstField) {
+        firstField.focus();
+      }
+    }
+
+    // Función para ajustar la altura de la página dinámicamente
+    function adjustViewport() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    }
+
+    // Ejecutar al cargar y al cambiar el tamaño
+    adjustViewport();
+    window.addEventListener("resize", adjustViewport);
+    window.addEventListener("orientationchange", adjustViewport);
+  });
+</script>
+{% endblock %}

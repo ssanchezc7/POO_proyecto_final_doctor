@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if object %}Editar Asignación de Permisos{% else %}Nueva Asignación de Permisos{% endif %} - SaludTotal
+{% endblock %}
+
+{% block extra_css %}
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/group_module_permissions_form.css' %}" />
+{% endblock %}
+
+{% block content %}
+    {% load static %}
+
+    <!-- Contenedor principal con altura controlada -->
+    <div class="min-h-screen bg-gray-50 dark:bg-white-900">
+        <div class="w-full px-6 py-8">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 sm:p-8 rounded-lg shadow-lg mb-8">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                    <div class="flex-1">
+                        <h1 class="text-2xl sm:text-3xl font-bold">
+                            <i class="fas fa-{% if object %}edit{% else %}plus{% endif %} mr-2"></i>
+                            {% if object %}
+                                Editar Asignación de Permisos
+                            {% else %}
+                                Nueva Asignación de Permisos
+                            {% endif %}
+                        </h1>
+                        <p class="text-blue-100 mt-1 text-sm sm:text-base">
+                            {% if object %}
+                                Modifica los permisos del grupo "{{ object.group.name }}" para el módulo "{{ object.module.name }}"
+                            {% else %}
+                                Crea una nueva asignación de permisos grupo-módulo
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="text-right mt-4 sm:mt-0">
+                        <div class="text-xl sm:text-2xl font-bold">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="text-xs sm:text-sm text-blue-100">Permisos</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario -->
+            <form method="post" class="space-y-6" id="permissionForm">
+                {% csrf_token %}
+
+                <!-- Contenedor principal del formulario -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+                    <!-- Vista previa de la asignación -->
+                    <div class="bg-gray-50 dark:bg-gray-700 px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-600">
+                        <div class="text-center">
+                            <div class="bg-white dark:bg-gray-800 rounded-full w-12 sm:w-16 h-12 sm:h-16 mx-auto flex items-center justify-center shadow-sm border border-gray-200 dark:border-gray-600 mb-3">
+                                <i class="fas fa-lock text-xl sm:text-2xl text-blue-600"></i>
+                            </div>
+                            <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                                Vista previa de la asignación
+                            </h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                {% if object %}
+                                    {{ object.group.name }} - {{ object.module.name }}
+                                {% else %}
+                                    Nueva asignación
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Campos del formulario -->
+                    <div class="p-4 sm:p-6">
+                        <!-- Grid de campos principales -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+                            <!-- Campo Group -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-users text-blue-500 mr-1"></i>
+                                    {{ form.group.label }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">
+                                    {{ form.group }}
+                                    <a href="{% url 'security:group_create' %}?next={{ request.get_full_path|urlencode }}"
+                                       class="absolute right-8 top-1/2 transform -translate-y-1/2 btn-sm btn-create"
+                                       title="Crear nuevo grupo">
+                                        <i class="fas fa-plus mr-1"></i>Nuevo
+                                    </a>
+                                </div>
+                                {% if form.group.help_text %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        {{ form.group.help_text }}
+                                    </p>
+                                {% endif %}
+                                {% if form.group.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.group.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Campo Module -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <i class="fas fa-cube text-blue-500 mr-1"></i>
+                                    {{ form.module.label }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <div class="relative">
+                                    {{ form.module }}
+                                    <a href="{% url 'security:module_create' %}?next={{ request.get_full_path|urlencode }}"
+                                       class="absolute right-8 top-1/2 transform -translate-y-1/2 btn-sm btn-create-module"
+                                       title="Crear nuevo módulo">
+                                        <i class="fas fa-plus mr-1"></i>Nuevo
+                                    </a>
+                                </div>
+                                {% if form.module.help_text %}
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        {{ form.module.help_text }}
+                                    </p>
+                                {% endif %}
+                                {% if form.module.errors %}
+                                    <div class="mt-1 text-red-600 text-sm">
+                                        {% for error in form.module.errors %}
+                                            <p>{{ error }}</p>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Campo Permissions -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                <i class="fas fa-key text-blue-500 mr-1"></i>
+                                {{ form.permissions.label }}
+                                <span class="text-red-500 ml-1">*</span>
+                            </label>
+                            {% if form.permissions.help_text %}
+                                <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ form.permissions.help_text }}
+                                </p>
+                            {% endif %}
+
+                            <!-- Contenedor de permisos con grid mejorado -->
+                            <div class="border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
+                                <div class="p-4">
+                                    <!-- Controles de selección -->
+                                    <div class="mb-4 pb-3 border-b border-gray-200 dark:border-gray-600">
+                                        <div class="flex justify-between items-center">
+                                            <div>
+                                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    Seleccionar permisos:
+                                                </span>
+                                                <span id="permission-counter" class="permission-counter ml-2">
+                                                    (0 seleccionados)
+                                                </span>
+                                            </div>
+                                            <!-- Botones de selección -->
+                                            <div class="flex space-x-2">
+                                                <button type="button" id="select-all"
+                                                        class="px-3 py-1 text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md transition-colors">
+                                                    <i class="fas fa-check-double mr-1"></i>Todos
+                                                </button>
+                                                <button type="button" id="select-none"
+                                                        class="px-3 py-1 text-xs bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md transition-colors">
+                                                    <i class="fas fa-times mr-1"></i>Ninguno
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Grid de checkboxes -->
+                                    <div id="permissions-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+                                        {% if form.permissions %}
+                                            {% for permission in form.permissions %}
+                                                <div class="permission-item flex items-start space-x-2 p-2 hover:bg-white dark:hover:bg-gray-600 rounded-md">
+                                                    <div class="flex items-center h-5">
+                                                        {{ permission.tag }}
+                                                    </div>
+                                                    <label for="{{ permission.id_for_label }}"
+                                                           class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer flex-1">
+                                                        <div class="font-medium">
+                                                            {{ permission.choice_label|title }}
+                                                        </div>
+                                                        {% if permission.data.value %}
+                                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                                Permiso: {{ permission.data.value }}
+                                                            </div>
+                                                        {% endif %}
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="col-span-full text-center p-8">
+                                                <div class="text-gray-400 mb-2">
+                                                    <i class="fas fa-cube text-3xl"></i>
+                                                </div>
+                                                <p class="text-gray-600 dark:text-gray-400">
+                                                    Selecciona un módulo para ver los permisos disponibles
+                                                </p>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if form.permissions.errors %}
+                                <div class="mt-2 text-red-600 text-sm">
+                                    {% for error in form.permissions.errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Información adicional para edición -->
+                        {% if object %}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                                <div class="bg-green-50 dark:bg-green-900 p-4 rounded-lg border border-green-200 dark:border-green-700">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-green-600 dark:text-green-300">
+                                            {{ object.group.user_set.count }}
+                                        </div>
+                                        <div class="text-xs text-green-600 dark:text-green-300 mt-1">
+                                            <i class="fas fa-user mr-1"></i>
+                                            Usuarios en el grupo
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-300">
+                                            {{ object.module.permissions.count }}
+                                        </div>
+                                        <div class="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                                            <i class="fas fa-key mr-1"></i>
+                                            Permisos disponibles
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-purple-600 dark:text-purple-300">
+                                            {{ object.permissions.count }}
+                                        </div>
+                                        <div class="text-xs text-purple-600 dark:text-purple-300 mt-1">
+                                            <i class="fas fa-check mr-1"></i>
+                                            Permisos asignados
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 sticky bottom-0 z-10">
+                    <div class="flex flex-col sm:flex-row justify-end items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                        <a href="{% url 'security:group_module_permission_list' %}"
+                           class="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                            <i class="fas fa-times mr-2"></i>
+                            Cancelar
+                        </a>
+                        <button type="submit" id="submitBtn"
+                                data-is-edit="{% if object %}true{% else %}false{% endif %}"
+                                class="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 shadow-sm">
+                            <i class="fas fa-save mr-2"></i>
+                            {% if object %}
+                                Actualizar Asignación
+                            {% else %}
+                                Crear Asignación
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Configuración JavaScript -->
+    <script>
+        // Configuración de URLs y datos para el JavaScript
+        window.modulePermissionsUrl = "{% url 'security:get_module_permissions' %}";
+
+        {% if object %}
+            // Permisos ya seleccionados para preservar en edición
+            window.selectedPermissionIds = [
+                {% for permission in object.permissions.all %}
+                    {{ permission.id }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ];
+        {% else %}
+            window.selectedPermissionIds = [];
+        {% endif %}
+    </script>
+
+    <!-- Cargar el archivo JavaScript externo -->
+    <script src="{% static 'js/group_module_permissions_form.js' %}"></script>
+
+{% endblock %}
